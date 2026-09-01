@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
-import { readState, writeState } from '../../lib/store.mjs';
-import { invalidate } from '../../lib/source.mjs';
+import { readState, writeState, resetState } from '../../lib/store.mjs';
+import { invalidate, credentials } from '../../lib/source.mjs';
 import { toPaise } from '../../lib/money.mjs';
+import { pingRazorpay } from '../../lib/razorpay.mjs';
+import { PRESETS } from '../../lib/presets.mjs';
 import { isAuthed, signIn, signOut } from '../../lib/auth.mjs';
 
 export const prerender = false;
 
-const back = (url, note) =>
+const back = (note) =>
   new Response(null, {
     status: 303,
     headers: { location: '/admin' + (note ? `?note=${encodeURIComponent(note)}` : '') },
@@ -17,81 +19,121 @@ const num = (form, field) => {
   return Number.isFinite(value) ? value : null;
 };
 
-export async function POST({ request, cookies, url }) {
+const str = (form, field, fallback, max) =>
+  String(form.get(field) ?? fallback ?? '').slice(0, max);
+
+export async function POST({ request, cookies }) {
   const form = await request.formData();
   const action = form.get('action');
 
   if (action === 'login') {
-    return signIn(cookies, form.get('password'))
-      ? back(url)
-      : back(url, 'Wrong password.');
+    return signIn(cookies, form.get('password')) ? back() : back('Wrong password.');
   }
   if (action === 'logout') {
     signOut(cookies);
-    return back(url);
+    return back();
   }
 
   if (!isAuthed(cookies)) return new Response('Not signed in', { status: 401 });
 
   const state = await readState();
 
-  if (action === 'campaign') {
-    const goal = num(form, 'goal');
-    const suggested = num(form, 'suggested');
-    if (!goal || goal <= 0) return back(url, 'Goal must be a positive amount.');
-    if (!suggested || suggested <= 0) return back(url, 'Suggested amount must be positive.');
-    await writeState({
-      org: {
-        name: String(form.get('orgName') || state.org.name).slice(0, 60),
-        tagline: String(form.get('tagline') || state.org.tagline).slice(0, 120),
-        donateUrl: String(form.get('donateUrl') || state.org.donateUrl).slice(0, 300),
-      },
-      campaign: {
-        goalPaise: toPaise(goal),
-        suggestedPaise: toPaise(suggested),
-        headline: String(form.get('headline') || state.campaign.headline).slice(0, 120),
-        subhead: String(form.get('subhead') || state.campaign.subhead).slice(0, 300),
-        note: String(form.get('note') || state.campaign.note).slice(0, 300),
-      },
-    });
-    invalidate();
-    return back(url, 'Campaign saved.');
+  switch (action) {
+    case 'campaign': {
+      const goal = num(form, 'goal');
+      const suggested = num(form, 'suggested');
+      if (!goal || goal <= 0) return back('Goal must be more than zero.');
+      if (!suggested || suggested <= 0) return back('Suggested amount must be more than zero.');
+      await writeState({
+        org: {
+          name: str(form, 'orgName', state.org.name, 60),
+          tagline: str(form, 'tagline', state.org.tagline, 120),
+          donateUrl: str(form, 'donateUrl', state.org.donateUrl, 300),
+        },
+        campaign: {
+          goalPaise: toPaise(goal),
+          suggestedPaise: toPaise(suggested),
+          headline: str(form, 'headline', state.campaign.headline, 120),
+          subhead: str(form, 'subhead', state.campaign.subhead, 300),
+          note: str(form, 'note', state.campaign.note, 300),
+        },
+      });
+      break;
+    }
+
+    case 'offline-add': {
+      const amount = num(form, 'amount');
+      if (!amount || amount <= 0) return back('Enter an amount above zero.');
+      await writeState({
+        offline: [...state.offline, {
+          id: randomUUID(),
+          label: str(form, 'label', 'Offline contribution', 80) || 'Offline contribution',
+          amountPaise: toPaise(amount),
+          dateISO: str(form, 'date', '', 10),
+        }],
+      });
+      break;
+    }
+
+    case 'offline-remove':
+      await writeState({ offline: state.offline.filter((e) => e.id !== form.get('id')) });
+      break;
+
+    case 'source':
+      await writeState({ source: { mode: form.get('mode') === 'live' ? 'live' : 'demo' } });
+      break;
+
+    case 'demo': {
+      const day = num(form, 'day');
+      const strength = num(form, 'strength');
+      await writeState({
+        demo: {
+          dayOverride: day && day > 0 ? day : null,
+          strength: strength && strength > 0 ? Math.min(strength, 1.4) : state.demo.strength,
+        },
+      });
+      break;
+    }
+
+    case 'test-razorpay': {
+      const creds = credentials();
+      const result = creds
+        ? await pingRazorpay(creds)
+        : { ok: false, message: 'No RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in this environment yet.' };
+      await writeState({
+        source: { lastTest: { ...result, atISO: new Date().toISOString() } },
+      });
+      break;
+    }
+
+    case 'preset': {
+      const preset = PRESETS[form.get('preset')];
+      if (!preset) return back('Unknown starting point.');
+      // Offline entries belong to whoever typed them; a preset should not
+      // silently delete money someone recorded by hand.
+      await writeState({ ...preset.state, offline: state.offline });
+      break;
+    }
+
+    case 'reset':
+      await resetState();
+      break;
+
+    default:
+      return back('Unknown action.');
   }
 
-  if (action === 'offline-add') {
-    const amount = num(form, 'amount');
-    if (!amount || amount <= 0) return back(url, 'Enter an amount above zero.');
-    await writeState({
-      offline: [...state.offline, {
-        id: randomUUID(),
-        label: String(form.get('label') || 'Offline contribution').slice(0, 80),
-        amountPaise: toPaise(amount),
-        dateISO: String(form.get('date') || '').slice(0, 10),
-      }],
-    });
-    invalidate();
-    return back(url, 'Contribution added.');
-  }
-
-  if (action === 'offline-remove') {
-    const id = form.get('id');
-    await writeState({ offline: state.offline.filter((entry) => entry.id !== id) });
-    invalidate();
-    return back(url, 'Contribution removed.');
-  }
-
-  if (action === 'source') {
-    await writeState({ source: { mode: form.get('mode') === 'live' ? 'live' : 'demo' } });
-    invalidate();
-    return back(url, 'Data source switched.');
-  }
-
-  if (action === 'demo-day') {
-    const day = num(form, 'day');
-    await writeState({ demo: { dayOverride: day && day > 0 ? day : null } });
-    invalidate();
-    return back(url, 'Demo day set.');
-  }
-
-  return back(url, 'Unknown action.');
+  invalidate();
+  return back(NOTES[action]);
 }
+
+const NOTES = {
+  campaign: 'Campaign saved. The page and the poster already show it.',
+  'offline-add': 'Contribution added to the public total.',
+  'offline-remove': 'Contribution removed.',
+  source: 'Data source switched.',
+  demo: 'Demo updated.',
+  'test-razorpay': 'Connection tested.',
+  preset: 'Starting point loaded.',
+  reset: 'Everything reset to defaults.',
+};

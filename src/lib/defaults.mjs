@@ -24,10 +24,15 @@ export const DEFAULT_STATE = {
   source: {
     mode: 'demo',              // 'demo' | 'live'
     lastSyncedAt: null,
+    // Result of the last "test connection" press, so the panel can say
+    // something more useful than "not configured".
+    lastTest: null,
   },
   demo: {
     // Lets you scrub to any day of the month when showing the thing to people.
     dayOverride: null,
+    // How the month is going, as a fraction of goal a full month would reach.
+    strength: 0.82,
     seed: 20260901,
   },
   history: {},

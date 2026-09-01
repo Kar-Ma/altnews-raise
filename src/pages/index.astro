@@ -101,20 +101,30 @@ const paceLine = s.met
     </section>
 
     <section class="stats">
+      {/* "₹0 still needed, 0 readers would close the gap" is a true but joyless
+          way to report a win, so the first two tiles change once it lands. */}
       <div class="stat card">
-        <div class="eyebrow">Still needed</div>
-        <div class="stat-value num" data-stat="shortfall">{formatShort(s.shortfallPaise)}</div>
-        <div class="stat-note num">{formatINR(s.shortfallPaise)}</div>
+        <div class="eyebrow">{s.met ? 'Over goal' : 'Still needed'}</div>
+        <div class="stat-value num" data-stat="shortfall">
+          {s.met ? formatShort(s.raisedPaise - s.goalPaise) : formatShort(s.shortfallPaise)}
+        </div>
+        <div class="stat-note num">
+          {s.met ? `past the ${formatShort(s.goalPaise)} target` : formatINR(s.shortfallPaise)}
+        </div>
       </div>
       <div class="stat card">
-        <div class="eyebrow">Readers at {formatINR(s.suggestedPaise)}</div>
-        <div class="stat-value num" data-stat="readers">{formatCount(s.readersNeeded)}</div>
-        <div class="stat-note">would close the gap</div>
+        <div class="eyebrow">{s.met ? 'Average gift' : `Readers at ${formatINR(s.suggestedPaise)}`}</div>
+        <div class="stat-value num" data-stat="readers">
+          {s.met ? formatINR(s.averagePaise) : formatCount(s.readersNeeded)}
+        </div>
+        <div class="stat-note">{s.met ? 'across every reader this month' : 'would close the gap'}</div>
       </div>
       <div class="stat card">
         <div class="eyebrow">Days left</div>
         <div class="stat-value num">{s.cycle.daysLeft}</div>
-        <div class="stat-note num">{formatShort(s.perDayNeededPaise)} a day from here</div>
+        <div class="stat-note num">
+          {s.met ? 'goal already met' : `${formatShort(s.perDayNeededPaise)} a day from here`}
+        </div>
       </div>
       <div class="stat card">
         <div class="eyebrow">Supporters</div>
@@ -181,7 +191,7 @@ const paceLine = s.met
     <hr class="rule" />
     <p>
       {s.campaign.note}
-      {' '}Open source — <a href="https://github.com/">read the code</a> that produces every figure on this page.
+      {' '}Open source — <a href="/about">how this page works</a>, and the code that produces every figure on it.
     </p>
   </footer>
 

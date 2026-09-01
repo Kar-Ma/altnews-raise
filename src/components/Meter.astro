@@ -17,7 +17,7 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
 
   <div class="track" role="img" aria-label={`${Math.round(s.percent)} percent of the ${formatShort(s.goalPaise)} goal raised`}>
     <div class="fill" data-fill style={`--p:${s.percentClamped / 100}`}></div>
-    {expectedPct > 2 && expectedPct < 99 && (
+    {!s.met && expectedPct > 2 && expectedPct < 99 && (
       <div class="pace-tick" style={`left:${expectedPct}%`} title="Where a steady month would be by now"></div>
     )}
   </div>

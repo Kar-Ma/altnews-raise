@@ -62,3 +62,28 @@ export async function fetchCycleTotal({ keyId, keySecret, from, to, include, fet
 /** Matches payments that came through a specific Payment Page, by its title. */
 export const byDescription = (needle) => (p) =>
   typeof p.description === 'string' && p.description.toLowerCase().includes(needle.toLowerCase());
+
+/**
+ * A single cheap request, so the admin screen can answer "are these keys any
+ * good?" without pulling a month of payments.
+ */
+export async function pingRazorpay({ keyId, keySecret, fetchImpl }) {
+  try {
+    const res = await (fetchImpl ?? fetch)(`${API}?count=1`, {
+      headers: { Authorization: authHeader(keyId, keySecret) },
+    });
+    if (res.status === 401) {
+      return { ok: false, message: 'Razorpay rejected the key. Check the id and secret, and that both are from the same mode (test or live).' };
+    }
+    if (!res.ok) {
+      return { ok: false, message: `Razorpay replied ${res.status}. ${(await res.text()).slice(0, 140)}` };
+    }
+    const body = await res.json();
+    return {
+      ok: true,
+      message: `Connected. Razorpay reports ${body.count ?? 0} payment${body.count === 1 ? '' : 's'} on this account.`,
+    };
+  } catch (e) {
+    return { ok: false, message: `Could not reach Razorpay: ${e.message}` };
+  }
+}

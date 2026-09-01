@@ -43,6 +43,17 @@ It starts in **demo mode** on `http://localhost:4400` with generated numbers, so
 you can see the whole thing before wiring anything up. Sign in at `/admin` with
 the password in `ADMIN_PASSWORD` (`letmein` if you have not set one).
 
+The admin opens on a four-step checklist, carries the Razorpay instructions
+inline, and — while in demo mode — gives you two sliders for the day of the
+month and how the month is going. Drag them and the figures and the poster
+beside them redraw. Push the second past 100% to see what the page does when
+the goal lands.
+
+Two starting points are one press apart in the admin: the **Alt News example**,
+filled in with real copy and invented numbers, and **Start from scratch** with
+placeholder text for your own organisation. Contributions you entered by hand
+survive either switch.
+
 | Route | What it is |
 | --- | --- |
 | `/` | The public meter |
@@ -51,7 +62,8 @@ the password in `ADMIN_PASSWORD` (`letmein` if you have not set one).
 | `/og.png` | 1200×630 link-preview card |
 | `/thanks` | Supporter card builder |
 | `/supporter.png` | The card itself |
-| `/admin` | Goal, copy, offline contributions |
+| `/about` | What it does and who it suits — for orgs deciding |
+| `/admin` | Setup checklist, goal, copy, offline contributions, Razorpay |
 | `/api/state.json` | The public read model, CORS-open |
 
 ## Going live

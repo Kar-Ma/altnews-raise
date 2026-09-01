@@ -21,7 +21,8 @@ export async function getSnapshot({ force = false, nowMs = Date.now() } = {}) {
   const creds = credentials();
   const live = state.source.mode === 'live' && creds;
 
-  const key = `${cycle.id}:${live ? 'live' : 'demo'}:${state.demo.dayOverride ?? 'now'}`;
+  const key = [cycle.id, live ? 'live' : 'demo', state.demo.dayOverride ?? 'now',
+    state.demo.strength, state.campaign.goalPaise, state.offline.length].join(':');
   if (!force && cached.key === key && Date.now() - cached.at < TTL_MS) {
     return { ...cached.value, cachedAt: cached.at };
   }
@@ -41,7 +42,7 @@ export async function getSnapshot({ force = false, nowMs = Date.now() } = {}) {
       cycle,
       seed: state.demo.seed,
       throughDay: state.demo.dayOverride,
-      targetPaise: Math.round(state.campaign.goalPaise * 0.82),
+      targetPaise: Math.round(state.campaign.goalPaise * (state.demo.strength ?? 0.82)),
     });
   }
 
