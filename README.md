@@ -10,6 +10,10 @@ Built for anyone already collecting on Razorpay who currently publishes progress
 by hand: newsrooms, legal aid and rights groups, community kitchens, shelters,
 school and hospital funds.
 
+**Live demo:** <https://open-raise-karma-lab.vercel.app> — set up as a worked
+example for a real newsroom, with generated numbers. The banner on the page says
+so, and the whole demo is `noindex`.
+
 ## Why this exists
 
 Newsrooms like Alt News run a monthly appeal and post a designed image with the
