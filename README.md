@@ -51,7 +51,8 @@ You can also change the headline and the wording under it, the goal (it can move
 mid-month), the suggested donation the "another N readers at ₹500" line counts in,
 and the three ways to give.
 
-See **[RUNBOOK.md](RUNBOOK.md)** for the month-to-month routine.
+See **[RUNBOOK.md](RUNBOOK.md)** for the month-to-month routine, and
+**[DECISIONS.md](DECISIONS.md)** for why it is built the way it is.
 
 ## Sending donors back afterwards
 
