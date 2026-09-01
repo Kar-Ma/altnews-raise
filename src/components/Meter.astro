@@ -32,7 +32,7 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
 </div>
 
 <style>
-  .meter-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: .9rem; }
+  .meter-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: .9rem; }
   .raised { font-family: var(--serif); font-size: clamp(2.4rem, 8vw, 3.6rem); line-height: 1; font-weight: 700; letter-spacing: -0.02em; }
   .goal { text-align: right; }
   .goal-value { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--muted); }
@@ -42,4 +42,10 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
   .meter-foot { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; margin-top: .7rem; font-size: .92rem; color: var(--muted); }
   .pct { font-weight: 700; color: var(--ink); }
   .dot { opacity: .45; }
+
+  /* Two big rupee figures will not share a phone-width line. Stack them. */
+  @media (max-width: 540px) {
+    .meter-head { flex-direction: column; align-items: flex-start; gap: .6rem; }
+    .goal { text-align: left; }
+  }
 </style>
