@@ -40,9 +40,12 @@ export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1
       text({ fontSize: 30, fontWeight: 600, color: '#C9C0B1', marginTop: 26 },
         who ? `— ${who}` : `— a reader in ${s.cycle.monthName}`),
       // Off by default: plenty of donors would rather not publish the number.
-      // Social proof, not a receipt: the number that matters is how many.
-      text({ fontSize: 24, fontWeight: 600, color: THEME.marigold, marginTop: 14 },
-        `one of ${formatCount(s.supporters)} readers funding ${s.cycle.monthName}`),
+      // Social proof, not a receipt: the number that matters is how many. Only
+      // shown once there is a count — "one of 0 readers" helps nobody.
+      s.supporters > 0
+        ? text({ fontSize: 24, fontWeight: 600, color: THEME.marigold, marginTop: 14 },
+          `one of ${formatCount(s.supporters)} readers funding ${s.cycle.monthName}`)
+        : null,
       showAmount && amountPaise
         ? text({ fontSize: 24, color: '#9A9285', marginTop: 8 }, `Chipped in ${formatINR(amountPaise)}`)
         : null,

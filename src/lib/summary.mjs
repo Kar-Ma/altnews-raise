@@ -43,7 +43,9 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
     h({ marginTop: 14 }, [
       text({ fontSize: 24, fontWeight: 600 }, `${Math.round(s.percent)}%`),
       text({ fontSize: 24, color: THEME.muted, marginLeft: 12 },
-        `· ${formatCount(s.supporters)} supporters · ${s.cycle.daysLeft} days left`),
+        s.supporters > 0
+          ? `· ${formatCount(s.supporters)} supporters · ${s.cycle.daysLeft} days left`
+          : `· ${s.cycle.daysLeft} days left in ${s.cycle.monthName}`),
     ]),
 
     h({ marginTop: 'auto', alignItems: 'flex-end', justifyContent: 'space-between' }, [
@@ -52,7 +54,9 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
           { size: 50, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1, tracking: -0.5 }),
         text({ fontSize: 26, fontWeight: 600, marginTop: 8 },
           s.met
-            ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
+            ? (s.supporters > 0
+              ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
+              : `${s.cycle.monthName} is funded, with thanks.`)
             : `≈ ${formatCount(s.readersNeeded)} more readers at ${formatINR(s.suggestedPaise)}`),
       ]),
       h({ flexDirection: 'column', alignItems: 'center' }, [

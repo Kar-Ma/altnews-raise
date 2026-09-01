@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { DEFAULT_STATE } from './defaults.mjs';
+import { env } from './env.mjs';
 
 // Settings are a few hundred bytes changed a few times a month, so the store is
 // deliberately dull. Two backends:
@@ -17,8 +18,8 @@ const FILE = resolve(process.cwd(), 'data/state.json');
 const KEY = 'open-raise:state';
 
 function kvConfig() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  const url = env('KV_REST_API_URL') || env('UPSTASH_REDIS_REST_URL');
+  const token = env('KV_REST_API_TOKEN') || env('UPSTASH_REDIS_REST_TOKEN');
   return url && token ? { url: url.replace(/\/$/, ''), token } : null;
 }
 
@@ -29,7 +30,7 @@ export function storeKind() {
 
 /** True when saving will silently fail: a serverless host with no KV attached. */
 export function storeIsEphemeral() {
-  return storeKind() === 'file' && Boolean(process.env.VERCEL || process.env.NETLIFY);
+  return storeKind() === 'file' && Boolean(env('VERCEL') || env('NETLIFY'));
 }
 
 let cache = null;

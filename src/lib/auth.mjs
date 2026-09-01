@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { env } from './env.mjs';
 
 // Demo-grade auth: one shared password for the whole newsroom, held in an
 // httpOnly cookie. It is enough to keep the goal out of a stranger's hands and
@@ -6,11 +7,11 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 
 const COOKIE = 'open_raise_admin';
 
-export const adminPassword = () => process.env.ADMIN_PASSWORD || 'letmein';
+export const adminPassword = () => env('ADMIN_PASSWORD') || 'letmein';
 
 const token = () =>
   createHash('sha256')
-    .update(adminPassword() + (process.env.SESSION_SALT || 'open-raise'))
+    .update(adminPassword() + (env('SESSION_SALT') || 'altnews-raise'))
     .digest('hex');
 
 export function isAuthed(cookies) {
@@ -29,7 +30,7 @@ export function signIn(cookies, password) {
     path: '/',
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: env('NODE_ENV') === 'production',
     maxAge: 60 * 60 * 24 * 14,
   });
   return true;
@@ -39,12 +40,12 @@ export function signOut(cookies) {
   cookies.delete(COOKIE, { path: '/' });
 }
 
-export const usingDefaultPassword = () => !process.env.ADMIN_PASSWORD;
+export const usingDefaultPassword = () => !env('ADMIN_PASSWORD');
 
 /** Anything that is not someone's laptop running `npm run dev`. */
 export const isDeployed = () =>
-  process.env.NODE_ENV === 'production' ||
-  Boolean(process.env.VERCEL || process.env.RENDER || process.env.RAILWAY_ENVIRONMENT || process.env.FLY_APP_NAME);
+  env('NODE_ENV') === 'production' ||
+  Boolean(env('VERCEL') || env('RENDER') || env('RAILWAY_ENVIRONMENT') || env('FLY_APP_NAME'));
 
 /**
  * A deployed admin with no password set would be an open control panel on the

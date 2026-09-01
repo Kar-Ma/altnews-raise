@@ -125,7 +125,9 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
       h({ marginTop: 16, alignItems: 'baseline' }, [
         text({ fontSize: 26, fontWeight: 600 }, `${Math.round(s.percent)}%`),
         text({ fontSize: 26, color: THEME.muted, marginLeft: 12 },
-          `· ${formatCount(s.supporters)} supporters · day ${s.cycle.dayOfCycle} of ${s.cycle.totalDays}`),
+          s.supporters > 0
+            ? `· ${formatCount(s.supporters)} supporters · day ${s.cycle.dayOfCycle} of ${s.cycle.totalDays}`
+            : `· day ${s.cycle.dayOfCycle} of ${s.cycle.totalDays}`),
       ]),
     ]),
 
@@ -135,7 +137,9 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
         { size: 58, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1, tracking: -0.5 }),
       text({ fontFamily: 'Text', fontSize: 30, fontWeight: 600, marginTop: 8 },
         s.met
-          ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
+          ? (s.supporters > 0
+            ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
+            : `${s.cycle.monthName} is funded, with thanks.`)
           : `≈ ${formatCount(s.readersNeeded)} more readers at ${formatINR(s.suggestedPaise)}`),
     ]),
 

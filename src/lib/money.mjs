@@ -11,7 +11,11 @@ export function formatINR(paise) {
   return '₹' + inr.format(Math.round(toRupees(paise)));
 }
 
-/** ₹5 lakh, ₹6.2 lakh, ₹1.1 crore — the register Indian fundraising copy uses. */
+/**
+ * ₹5 lakh, ₹6.2 lakh, ₹1.1 crore — the register Indian fundraising copy uses.
+ * Below a lakh it stays in full digits: "₹21,000" is what people say, where
+ * "₹21 thousand" is what only a computer says.
+ */
 export function formatShort(paise) {
   const r = toRupees(paise);
   const unit = (value, suffix) => {
@@ -20,7 +24,6 @@ export function formatShort(paise) {
   };
   if (r >= 1e7) return unit(r / 1e7, 'crore');
   if (r >= 1e5) return unit(r / 1e5, 'lakh');
-  if (r >= 1e3) return unit(r / 1e3, 'thousand');
   return formatINR(paise);
 }
 

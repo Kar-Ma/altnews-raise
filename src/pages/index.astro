@@ -67,33 +67,29 @@ const stale = isStale(s.updatedAt);
       </p>
     </section>
 
+    <!-- The line above already says the shortfall and the reader count, so
+         these three say what it does not: how long, how fast, how many. -->
     <section class="stats">
       <div class="stat card">
-        <div class="eyebrow">{s.met ? 'Over goal' : 'Still needed'}</div>
-        <div class="stat-value num">
-          {s.met ? formatShort(s.raisedPaise - s.goalPaise) : formatShort(s.shortfallPaise)}
-        </div>
-        <div class="stat-note num">
-          {s.met ? `past the ${formatShort(s.goalPaise)} target` : formatINR(s.shortfallPaise)}
-        </div>
-      </div>
-      <div class="stat card">
-        <div class="eyebrow">Readers at {formatINR(s.suggestedPaise)}</div>
-        <div class="stat-value num">{formatCount(s.readersNeeded)}</div>
-        <div class="stat-note">{s.met ? 'not needed — it is funded' : 'would close the gap'}</div>
-      </div>
-      <div class="stat card">
-        <div class="eyebrow">Days left in {s.cycle.monthName}</div>
         <div class="stat-value num">{s.cycle.daysLeft}</div>
-        <div class="stat-note num">
-          {s.met ? 'goal already met' : `${formatShort(s.perDayNeededPaise)} a day from here`}
-        </div>
+        <div class="stat-label">{s.cycle.daysLeft === 1 ? 'day left' : 'days left'} in {s.cycle.monthName}</div>
       </div>
+      {!s.met && (
+        <div class="stat card">
+          <div class="stat-value num">{formatINR(s.perDayNeededPaise)}</div>
+          <div class="stat-label">a day, to get there</div>
+        </div>
+      )}
       {s.supporters > 0 && (
         <div class="stat card">
-          <div class="eyebrow">Supporters</div>
           <div class="stat-value num">{formatCount(s.supporters)}</div>
-          <div class="stat-note">this month</div>
+          <div class="stat-label">readers have given</div>
+        </div>
+      )}
+      {s.met && (
+        <div class="stat card">
+          <div class="stat-value num">{formatShort(s.raisedPaise - s.goalPaise)}</div>
+          <div class="stat-label">past the goal</div>
         </div>
       )}
     </section>
@@ -210,10 +206,10 @@ const stale = isStale(s.updatedAt);
     .stamp-stale { color: #8A6413; }
     .stamp-stale .dot-mark { background: var(--marigold); }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .85rem; margin-top: .85rem; }
-    .stat { padding: 1.1rem 1.2rem; }
-    .stat-value { font-family: var(--serif); font-size: 1.9rem; font-weight: 800; line-height: 1.15; margin-top: .3rem; }
-    .stat-note { color: var(--muted); font-size: .82rem; margin-top: .15rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .85rem; margin-top: .85rem; }
+    .stat { padding: 1.2rem 1.25rem; }
+    .stat-value { font-family: var(--serif); font-size: 2rem; font-weight: 800; line-height: 1; }
+    .stat-label { color: var(--muted); font-size: .88rem; margin-top: .3rem; }
 
     .give { margin-top: 3rem; }
     .give h2 { font-size: 1.5rem; margin-bottom: 1rem; }
@@ -233,7 +229,7 @@ const stale = isStale(s.updatedAt);
     .way-actions { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
     .qr { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
     .qr-frame {
-      width: 108px; height: 108px; padding: 6px; background: #fff;
+      width: 152px; height: 152px; padding: 9px; background: #fff;
       border: 1px solid var(--rule); border-radius: 8px; cursor: zoom-in;
       transition: border-color .12s ease, transform .12s ease;
     }
