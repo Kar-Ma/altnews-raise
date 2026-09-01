@@ -4,13 +4,13 @@ import { createHash, timingSafeEqual } from 'node:crypto';
 // httpOnly cookie. It is enough to keep the goal out of a stranger's hands and
 // no more — a real deployment should put this behind the org's own SSO.
 
-const COOKIE = 'open_appeal_admin';
+const COOKIE = 'raise_meter_admin';
 
 export const adminPassword = () => process.env.ADMIN_PASSWORD || 'letmein';
 
 const token = () =>
   createHash('sha256')
-    .update(adminPassword() + (process.env.SESSION_SALT || 'open-appeal'))
+    .update(adminPassword() + (process.env.SESSION_SALT || 'raise-meter'))
     .digest('hex');
 
 export function isAuthed(cookies) {

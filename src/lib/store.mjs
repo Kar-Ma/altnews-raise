@@ -14,7 +14,7 @@ import { DEFAULT_STATE } from './defaults.mjs';
 // knows nor cares which one is in play.
 
 const FILE = resolve(process.cwd(), 'data/state.json');
-const KEY = 'open-appeal:state';
+const KEY = 'raise-meter:state';
 
 function kvConfig() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;

@@ -51,7 +51,7 @@ const steps = authed ? [
 ] : [];
 const stepsDone = steps.filter((step) => step.done).length;
 ---
-<Base title="Admin — Open Appeal" description="Private control panel." noindex={true}>
+<Base title="Admin — Raise Meter" description="Private control panel." noindex={true}>
   <main class="wrap">
     {!authed ? (
       <div class="gate">
@@ -90,7 +90,7 @@ const stepsDone = steps.filter((step) => step.done).length;
             )}
           </form>
         )}
-        <p class="gate-note"><a href="/about">What is Open Appeal?</a></p>
+        <p class="gate-note"><a href="/about">What is Raise Meter?</a></p>
       </div>
     ) : (
       <>
@@ -98,7 +98,7 @@ const stepsDone = steps.filter((step) => step.done).length;
           <div>
             <h1>{state.org.name} — {s.cycle.label}</h1>
             <p class="bar-sub">
-              <a href="/about">What Open Appeal is</a> · private control panel
+              <a href="/about">What Raise Meter is</a> · private control panel
               {storeKind() === 'kv' ? ' · settings in KV' : ''}
             </p>
           </div>
@@ -146,7 +146,7 @@ const stepsDone = steps.filter((step) => step.done).length;
                 <span class={hasCreds ? 'pill pill-live' : 'pill'}>{hasCreds ? 'Keys found' : 'Not connected'}</span>
               </div>
               <p class="hint">
-                Open Appeal only ever <em>reads</em> payments. It never takes money, never creates a payment,
+                Raise Meter only ever <em>reads</em> payments. It never takes money, never creates a payment,
                 and never writes a donor's details anywhere. Your existing Razorpay page keeps doing the collecting.
               </p>
 
