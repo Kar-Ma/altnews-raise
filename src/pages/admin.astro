@@ -3,8 +3,9 @@ import Base from '../layouts/Base.astro';
 import { getSnapshot, credentials } from '../lib/source.mjs';
 import { readState } from '../lib/store.mjs';
 import { toRupees, formatINR, formatCount } from '../lib/money.mjs';
-import { isAuthed, usingDefaultPassword } from '../lib/auth.mjs';
+import { isAuthed, usingDefaultPassword, adminLocked, isDeployed } from '../lib/auth.mjs';
 import { PRESETS, activePreset } from '../lib/presets.mjs';
+import { storeKind, storeIsEphemeral } from '../lib/store.mjs';
 
 export const prerender = false;
 
@@ -14,6 +15,8 @@ const state = await readState();
 const s = authed ? await getSnapshot() : null;
 const hasCreds = Boolean(credentials());
 const preset = activePreset(state);
+const locked = adminLocked();
+const ephemeral = storeIsEphemeral();
 
 // The checklist is the whole welcome. Four things, and it says which are done.
 const steps = authed ? [
@@ -48,34 +51,56 @@ const steps = authed ? [
 ] : [];
 const stepsDone = steps.filter((step) => step.done).length;
 ---
-<Base title="Admin — Tally" description="Set the goal, record other contributions, and connect Razorpay.">
+<Base title="Admin — Open Appeal" description="Private control panel." noindex={true}>
   <main class="wrap">
     {!authed ? (
       <div class="gate">
-        <h1>Sign in to Tally</h1>
-        <form class="card panel narrow" method="post" action="/api/admin">
-          <input type="hidden" name="action" value="login" />
-          <label>
-            <span>Password</span>
-            <input type="password" name="password" autocomplete="current-password" required autofocus />
-          </label>
-          <button class="btn btn-primary" type="submit">Sign in</button>
-          {note && <p class="warn">{note}</p>}
-          {usingDefaultPassword() && (
-            <p class="hint">
-              No <code>ADMIN_PASSWORD</code> is set, so the password is <code>letmein</code>.
-              Set one before this is reachable from the internet.
+        <h1>{state.org.name}'s control panel</h1>
+        <p class="gate-lede">
+          This screen is for whoever runs the appeal. It sets the goal and the wording;
+          it cannot see or move money. If you came here to donate,
+          {' '}<a href="/">the public page is this way</a>.
+        </p>
+
+        {locked ? (
+          <div class="card panel narrow">
+            <p class="warn">
+              <strong>Locked.</strong> This deployment has no <code>ADMIN_PASSWORD</code> set, so the
+              panel refuses to open rather than fall back to a password published in the source code.
             </p>
-          )}
-        </form>
-        <p class="gate-note"><a href="/about">What is this?</a></p>
+            <p class="hint">
+              Set <code>ADMIN_PASSWORD</code> and <code>SESSION_SALT</code> in the environment and
+              redeploy. The public page carries on working meanwhile.
+            </p>
+          </div>
+        ) : (
+          <form class="card panel narrow" method="post" action="/api/admin">
+            <input type="hidden" name="action" value="login" />
+            <label>
+              <span>Password</span>
+              <input type="password" name="password" autocomplete="current-password" required autofocus />
+            </label>
+            <button class="btn btn-primary" type="submit">Sign in</button>
+            {note && <p class="warn">{note}</p>}
+            {usingDefaultPassword() && (
+              <p class="hint">
+                Running locally with no <code>ADMIN_PASSWORD</code>, so the password is
+                {' '}<code>letmein</code>. Deployments refuse to open until you set a real one.
+              </p>
+            )}
+          </form>
+        )}
+        <p class="gate-note"><a href="/about">What is Open Appeal?</a></p>
       </div>
     ) : (
       <>
         <header class="bar">
           <div>
             <h1>{state.org.name} — {s.cycle.label}</h1>
-            <p class="bar-sub"><a href="/about">What Tally is</a> · admin</p>
+            <p class="bar-sub">
+              <a href="/about">What Open Appeal is</a> · private control panel
+              {storeKind() === 'kv' ? ' · settings in KV' : ''}
+            </p>
           </div>
           <div class="bar-right">
             <span class={s.mode === 'live' ? 'pill pill-live' : 'pill'}>
@@ -86,6 +111,14 @@ const stepsDone = steps.filter((step) => step.done).length;
         </header>
 
         {note && <p class="note">{note}</p>}
+
+        {ephemeral && (
+          <p class="note note-bad">
+            <strong>Changes here will not stick.</strong> This is a serverless deployment with no key-value
+            store attached, so the filesystem resets between requests. Add Vercel KV or an Upstash Redis
+            database and set <code>KV_REST_API_URL</code> and <code>KV_REST_API_TOKEN</code>.
+          </p>
+        )}
 
         <div class="cols">
           <div class="stack">
@@ -113,7 +146,7 @@ const stepsDone = steps.filter((step) => step.done).length;
                 <span class={hasCreds ? 'pill pill-live' : 'pill'}>{hasCreds ? 'Keys found' : 'Not connected'}</span>
               </div>
               <p class="hint">
-                Tally only ever <em>reads</em> payments. It never takes money, never creates a payment,
+                Open Appeal only ever <em>reads</em> payments. It never takes money, never creates a payment,
                 and never writes a donor's details anywhere. Your existing Razorpay page keeps doing the collecting.
               </p>
 
@@ -341,7 +374,8 @@ SESSION_SALT=something-random</pre>
     main { padding-bottom: 4rem; }
 
     .gate { max-width: 24rem; padding: 4rem 0; }
-    .gate h1 { font-size: 2rem; margin: 0 0 1.25rem; }
+    .gate h1 { font-size: 2rem; margin: 0 0 .75rem; }
+    .gate-lede { color: var(--muted); font-size: .95rem; margin: 0 0 1.5rem; max-width: 46ch; }
     .gate-note { margin-top: 1rem; font-size: .88rem; color: var(--muted); }
     .narrow { display: flex; flex-direction: column; gap: .9rem; }
 
@@ -357,6 +391,7 @@ SESSION_SALT=something-random</pre>
     }
     .pill-live { border-color: var(--good); color: var(--good); background: #F0F5F1; }
 
+    .note-bad { background: var(--accent-soft) !important; border-color: #F0CFCF !important; color: #7A1216 !important; }
     .note { background: var(--marigold-soft); border: 1px solid #E7CF95; color: #7A5610; padding: .7rem 1rem; border-radius: 9px; font-size: .9rem; }
 
     .cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(17rem, .85fr); gap: 1rem; align-items: start; }

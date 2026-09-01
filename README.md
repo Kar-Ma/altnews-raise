@@ -1,13 +1,14 @@
-# Tally
+# Open Appeal
 
-A live monthly fundraising meter for reader-funded newsrooms in India.
+A live monthly fundraising meter for reader-funded organisations in India.
 
 One page that shows how much has come in this month, how far there is to go, and
 what closes the gap — and that draws its own shareable poster from those numbers,
 so nobody has to remake a graphic every time the total moves.
 
-Built for organisations that already collect on Razorpay and currently publish
-progress by hand.
+Built for anyone already collecting on Razorpay who currently publishes progress
+by hand: newsrooms, legal aid and rights groups, community kitchens, shelters,
+school and hospital funds.
 
 ## Why this exists
 
@@ -28,7 +29,7 @@ This does four things instead:
 
 ## Not a payment page
 
-Tally never takes a payment, never creates one, and never stores a donor
+Open Appeal never takes a payment, never creates one, and never stores a donor
 record. The Donate button and the QR point at the organisation's existing
 Razorpay page. All this does is read a total and draw it.
 
@@ -87,7 +88,7 @@ So: **run this yourself.** Fork it, deploy it under your own domain, put your ow
 key in your own environment. Do not hand a Razorpay key to anyone, including
 whoever showed you this.
 
-Tally reads `amount`, `status`, and `amount_refunded`. It never writes donor
+Open Appeal reads `amount`, `status`, and `amount_refunded`. It never writes donor
 fields to disk and never sends them anywhere.
 
 ### What gets counted
@@ -103,28 +104,63 @@ than no page at all. Enter the other channels.
 If the Razorpay call fails, the page shows zero online and says so. It will not
 fall back to a plausible-looking number.
 
-## Deploying
+## Hosting it
 
-Node, on anything. For Vercel:
+Pick whichever of these describes you.
+
+### The quick way — Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FKar-Ma%2Fopen-appeal&env=ADMIN_PASSWORD,SESSION_SALT&envDescription=A%20password%20for%20the%20admin%20screen%20and%20any%20random%20string%20for%20the%20session%20salt&project-name=open-appeal&repository-name=open-appeal)
+
+That forks the repo into your account and deploys it. Two things to know:
+
+1. **Set `ADMIN_PASSWORD` and `SESSION_SALT`** when it asks. Without a password
+   the admin screen refuses to open at all, rather than falling back to a
+   default anyone could read here.
+2. **Add a key-value store.** Serverless filesystems reset between requests, so
+   settings would not survive. In your project, go to Storage, create an Upstash
+   Redis (or Vercel KV) database, and connect it — it sets `KV_REST_API_URL` and
+   `KV_REST_API_TOKEN` for you. The admin screen tells you in red if this is
+   missing.
+
+Razorpay keys are optional at this point. It runs in demo mode until you add
+them, which is a fine way to show colleagues what it looks like.
+
+### The durable way — a box with a disk
+
+Railway, Fly, Render with a persistent volume, or any VPS. No key-value store
+needed: settings go in `data/state.json`, so give that directory a volume.
 
 ```bash
-npm install @astrojs/vercel
+git clone https://github.com/Kar-Ma/open-appeal && cd open-appeal
+npm install && npm run build
+ADMIN_PASSWORD=… SESSION_SALT=… node dist/server/entry.mjs
 ```
 
-then swap the adapter in `astro.config.mjs`, and include the fonts the poster
-renderer reads at runtime:
+The adapter picks itself: Vercel's build sets `VERCEL=1` and gets the serverless
+adapter, everything else gets the Node server. Nobody edits `astro.config.mjs`.
 
-```js
-import vercel from '@astrojs/vercel';
-export default defineConfig({
-  output: 'server',
-  adapter: vercel({ includeFiles: ['public/fonts/text-400.woff', /* …the other four… */] }),
-});
-```
+### Environment
 
-State lives in `data/state.json`. That is fine for one newsroom on one box; for
-anything else, replace the two functions in `src/lib/store.mjs` with your
-database and nothing else changes.
+| Variable | Needed | What it does |
+| --- | --- | --- |
+| `ADMIN_PASSWORD` | Yes, once deployed | Opens the admin screen. Without it a deployment locks the panel. |
+| `SESSION_SALT` | Yes, once deployed | Any random string; salts the admin session cookie. |
+| `RAZORPAY_KEY_ID` | For real numbers | Read access to your payments. |
+| `RAZORPAY_KEY_SECRET` | For real numbers | The other half. |
+| `KV_REST_API_URL` | On serverless | Upstash/Vercel KV, so settings persist. |
+| `KV_REST_API_TOKEN` | On serverless | The token for it. |
+
+`UPSTASH_REDIS_REST_URL` / `_TOKEN` work too — same protocol, different
+integration naming.
+
+### Keeping the admin private
+
+- It is `noindex, nofollow`, and `robots.txt` disallows `/admin` and `/api/admin`.
+- Nothing on the public page links to it.
+- A deployment with no `ADMIN_PASSWORD` refuses to sign anyone in.
+- Auth is still one shared password. It keeps the goal out of a stranger's
+  hands; it is not a substitute for your own SSO if you have one.
 
 ## Making it yours
 
@@ -149,11 +185,14 @@ falls back to the next registered face without raising anything.
 
 - **Admin auth is one shared password.** Enough to keep the goal out of a
   stranger's hands, not enough for anything else. Put it behind your own SSO.
+  A deployment with no `ADMIN_PASSWORD` set refuses to open the panel at all.
 - **`/supporter.png` renders a name from the query string.** It is stripped and
   capped at 32 characters, but anyone can generate a card with any name on it and
   share it as though it came from you. Turn the route off if that is not a trade
   you want.
 - **No history yet.** Past months are archived in state but nothing displays them.
+  "Funded 47 months running" is the strongest line a reader-funded organisation
+  has, and it is still on the floor.
 - **Numbers refresh at most once a minute**, cached in process, so a hundred
   people watching the page is still one Razorpay call.
 
