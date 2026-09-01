@@ -43,5 +43,6 @@ export const THEME = {
   accent: '#C0161C',
   // The print red goes muddy on near-black; the card uses this instead.
   accentOnDark: '#F0574B',
+  marigold: '#E39A18',
   good: '#3F6B4A',
 };

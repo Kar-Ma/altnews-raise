@@ -12,10 +12,10 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
-    padding: 56, fontFamily: 'Inter', color: THEME.ink,
+    padding: 56, fontFamily: 'Plex', color: THEME.ink,
   }, [
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Lora', fontWeight: 700, fontSize: 32 }, s.org.name),
+      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 32 }, s.org.name),
       text({ fontSize: 22, color: THEME.muted }, `${s.cycle.label} · day ${s.cycle.dayOfCycle} of ${s.cycle.totalDays}`),
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 18, marginBottom: 26 }),

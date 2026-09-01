@@ -16,7 +16,7 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
   </div>
 
   <div class="track" role="img" aria-label={`${Math.round(s.percent)} percent of the ${formatShort(s.goalPaise)} goal raised`}>
-    <div class="fill" data-fill style={`width:${s.percentClamped}%`}></div>
+    <div class="fill" data-fill style={`--p:${s.percentClamped / 100}`}></div>
     {expectedPct > 2 && expectedPct < 99 && (
       <div class="pace-tick" style={`left:${expectedPct}%`} title="Where a steady month would be by now"></div>
     )}
@@ -37,7 +37,13 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
   .goal { text-align: right; }
   .goal-value { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--muted); }
   .track { position: relative; height: 20px; background: #EFE7D8; border-radius: 999px; overflow: hidden; border: 1px solid var(--rule); }
-  .fill { height: 100%; background: linear-gradient(90deg, #C0161C, #E0483A); border-radius: 999px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  /* Scale, not width: animating width relayouts the row on every frame. */
+  .fill {
+    width: 100%; height: 100%; border-radius: 999px;
+    background: linear-gradient(90deg, #C0161C, #E0483A);
+    transform: scaleX(var(--p, 0)); transform-origin: left center;
+    transition: transform .9s cubic-bezier(.2,.8,.2,1);
+  }
   .pace-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .35; }
   .meter-foot { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; margin-top: .7rem; font-size: .92rem; color: var(--muted); }
   .pct { font-weight: 700; color: var(--ink); }

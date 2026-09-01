@@ -16,11 +16,11 @@ export async function fonts() {
   if (fontCache) return fontCache;
   const load = async (file) => new Uint8Array(await readFile(resolve(FONT_DIR, file)));
   fontCache = [
-    { name: 'Inter', data: await load('inter-400.woff'), weight: 400, style: 'normal' },
-    { name: 'Inter', data: await load('inter-600.woff'), weight: 600, style: 'normal' },
-    { name: 'Inter', data: await load('inter-800.woff'), weight: 800, style: 'normal' },
-    { name: 'Lora', data: await load('lora-600.woff'), weight: 600, style: 'normal' },
-    { name: 'Lora', data: await load('lora-700.woff'), weight: 700, style: 'normal' },
+    { name: 'Plex', data: await load('plex-400.woff'), weight: 400, style: 'normal' },
+    { name: 'Plex', data: await load('plex-600.woff'), weight: 600, style: 'normal' },
+    { name: 'Plex', data: await load('plex-700.woff'), weight: 700, style: 'normal' },
+    { name: 'Display', data: await load('display-600.woff'), weight: 600, style: 'normal' },
+    { name: 'Display', data: await load('display-700.woff'), weight: 700, style: 'normal' },
   ];
   return fontCache;
 }
@@ -44,22 +44,22 @@ export const h = (style, children) => ({
 export const text = (style, content) => h({ ...style }, content);
 
 export const EYEBROW = {
-  fontFamily: 'Inter', fontSize: 20, fontWeight: 600, letterSpacing: 2.6,
+  fontFamily: 'Plex', fontSize: 20, fontWeight: 600, letterSpacing: 2.6,
   textTransform: 'uppercase', color: THEME.muted,
 };
 
 /**
  * Serif lines are laid out word by word. Two reasons: a single word can be
- * coloured without inline-span guesswork, and Lora's space glyph renders
+ * coloured without inline-span guesswork, and the display face's space glyph renders
  * zero-width under satori, which silently welds words together.
  */
 export function serifLine(str, { size, color = THEME.ink, accent = THEME.accent, emphasisFrom = Infinity, maxWidth, lineHeight = 1.02, tracking = 0 }) {
   return h({ flexWrap: 'wrap', maxWidth }, str.split(' ').map((word, i) => {
     const glyphs = {
-      fontFamily: 'Lora', fontWeight: 700, fontSize: size, lineHeight,
+      fontFamily: 'Display', fontWeight: 700, fontSize: size, lineHeight,
       letterSpacing: tracking, color: i >= emphasisFrom ? accent : color,
     };
-    // ₹ is absent from Lora, and satori drops the margin of any box whose text
+    // ₹ is absent from the display face, and satori drops the margin of any box whose text
     // needed a fallback font. Giving the symbol its own box keeps the space.
     if (word.includes('₹')) {
       const parts = word.split('₹').flatMap((p, j) => (j === 0 ? [p] : ['₹', p])).filter(Boolean);
@@ -82,19 +82,19 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
-    padding: 64, fontFamily: 'Inter', color: THEME.ink,
+    padding: 64, fontFamily: 'Plex', color: THEME.ink,
   }, [
     // Masthead
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Lora', fontWeight: 700, fontSize: 40 }, s.org.name),
-      text({ fontFamily: 'Inter', fontSize: 24, color: THEME.muted }, s.org.tagline),
+      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 40 }, s.org.name),
+      text({ fontFamily: 'Plex', fontSize: 24, color: THEME.muted }, s.org.tagline),
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 22, marginBottom: 40 }),
 
     serifLine(s.campaign.headline, { size: 80, maxWidth: 840, emphasisFrom: words.length - 1, tracking: -1.5 }),
 
     h({ flexDirection: 'column', marginTop: 30 }, subLines.map((line, i) => text({
-      fontFamily: 'Inter', fontSize: 26, lineHeight: 1.42,
+      fontFamily: 'Plex', fontSize: 26, lineHeight: 1.42,
       fontWeight: i === subLines.length - 1 ? 600 : 400,
       color: i === subLines.length - 1 ? THEME.accent : THEME.muted,
     }, line + '.'))),
@@ -132,7 +132,7 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
     h({ flexDirection: 'column', marginTop: 38 }, [
       serifLine(s.met ? 'Goal met.' : `${formatShort(s.shortfallPaise)} short`,
         { size: 58, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
-      text({ fontFamily: 'Inter', fontSize: 30, fontWeight: 600, marginTop: 8 },
+      text({ fontFamily: 'Plex', fontSize: 30, fontWeight: 600, marginTop: 8 },
         s.met
           ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
           : `≈ ${formatCount(s.readersNeeded)} more readers at ${formatINR(s.suggestedPaise)}`),

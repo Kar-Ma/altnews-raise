@@ -9,6 +9,25 @@ export const prerender = false;
 
 const s = await getSnapshot();
 const qr = await qrSvg(s.org.donateUrl);
+
+// The last word carries the address to the reader — red on the page for the
+// same reason it is red on the poster.
+const headWords = s.campaign.headline.trim().split(' ');
+const headLead = headWords.slice(0, -1).join(' ');
+const headLast = headWords.at(-1);
+
+const creed = s.campaign.subhead.split('.').map((line) => line.trim()).filter(Boolean);
+
+// One dot per reader who has given. Deliberately not a second progress bar:
+// readers-given over readers-needed is a different ratio from money raised over
+// goal (a few large gifts skew it), and two meters disagreeing on the same
+// screen reads as an error. This one only says: here are the people.
+const DOT_BUDGET = 900;
+const dotUnit = Math.max(Math.ceil(s.supporters / DOT_BUDGET), 1);
+const dotsGiven = Math.round(s.supporters / dotUnit);
+
+// Ladders people actually give on, anchored to the org's own suggested amount.
+const chips = [1, 2, 5, 10].map((multiple) => s.suggestedPaise * multiple);
 const paceLine = s.met
   ? `Goal met with ${s.cycle.daysLeft} days to spare.`
   : s.projectedPaise === null
@@ -36,8 +55,19 @@ const paceLine = s.met
 
   <main class="wrap">
     <section class="hero">
-      <h1>{s.campaign.headline}</h1>
-      <p class="subhead">{s.campaign.subhead.split('.').filter(Boolean).map((line) => (<span>{line.trim()}.</span>))}</p>
+      <div class="hero-text">
+        <h1>{headLead} <em>{headLast}</em></h1>
+        <ul class="creed">
+          {creed.map((line, i) => (
+            <li class={i === creed.length - 1 ? 'creed-last' : undefined}>{line}</li>
+          ))}
+        </ul>
+      </div>
+      <div class={s.met ? 'seal seal-met' : 'seal'} aria-hidden="true">
+        <span class="seal-top">{s.met ? 'Goal' : 'Reader'}</span>
+        <span class="seal-big">{s.met ? 'met' : 'funded'}</span>
+        <span class="seal-bottom">{s.cycle.monthName.slice(0, 3)} {new Date(s.cycle.startMs).getUTCFullYear()}</span>
+      </div>
     </section>
 
     <section class="card panel">
@@ -47,6 +77,16 @@ const paceLine = s.met
 
       <div class="actions">
         <div class="action-main">
+          <ul class="chips">
+            {chips.map((paise) => (
+              <li>
+                <a href={s.org.donateUrl} target="_blank" rel="noopener" class={paise === s.suggestedPaise ? 'chip chip-common' : 'chip'}>
+                  {formatINR(paise)}
+                  {paise === s.suggestedPaise && <span class="chip-tag">most common</span>}
+                </a>
+              </li>
+            ))}
+          </ul>
           <a class="btn btn-primary" href={s.org.donateUrl} target="_blank" rel="noopener">Donate now</a>
           <p class="action-note">
             Payments are handled by {s.org.name} on Razorpay. This page never touches your money or your details.
@@ -84,6 +124,20 @@ const paceLine = s.met
     </section>
 
     <p class="pace">{paceLine}</p>
+
+    <section class="people">
+      <div class="people-head">
+        <h2>{formatCount(s.supporters)} readers, so far this month</h2>
+        <p>
+          {dotUnit === 1 ? 'Each dot is one of them.' : `Each dot stands for ${dotUnit} of them.`}
+          {' '}The pale one at the end is free.
+        </p>
+      </div>
+      <div class="dots" role="img" aria-label={`${formatCount(s.supporters)} readers have given this month`}>
+        {Array.from({ length: dotsGiven }, () => <i class="dot-given"></i>)}
+        <a class="dot-you" href={s.org.donateUrl} target="_blank" rel="noopener" title="Add yourself"></a>
+      </div>
+    </section>
 
     <section class="card share">
       <div>
@@ -139,9 +193,32 @@ const paceLine = s.met
     .json-link { font-size: .82rem; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
     .json-link:hover { color: var(--ink); border-color: var(--ink); }
 
-    .hero { padding: 3rem 0 2rem; max-width: 34ch; }
-    .hero h1 { font-size: clamp(2.6rem, 9vw, 4.4rem); line-height: 1.02; font-weight: 700; }
-    .subhead { color: var(--muted); font-size: 1.02rem; margin: 1.25rem 0 0; display: flex; flex-direction: column; }
+    .hero {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto;
+      gap: 2rem; align-items: center; padding: 3.5rem 0 2.5rem;
+    }
+    /* ch here resolves against the display size, so the measure is the one the
+       headline actually gets — three orphaned words was the old bug. */
+    .hero h1 { font-size: clamp(2.5rem, 7.5vw, 4.2rem); line-height: 1.04; font-weight: 700; max-width: 17ch; }
+    .hero h1 em { font-style: normal; color: var(--accent); }
+
+    .creed { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin: 1.5rem 0 0; padding: 0; }
+    .creed li { color: var(--muted); font-size: .95rem; }
+    .creed li:not(:last-child)::after { content: '·'; margin-left: .9rem; opacity: .45; }
+    .creed .creed-last { color: var(--accent); font-weight: 600; }
+
+    /* A letterpress mark, not a badge component. Slightly off-square on purpose. */
+    .seal {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      width: 9.5rem; height: 9.5rem; border-radius: 50%;
+      border: 2px solid var(--accent); outline: 1px solid var(--accent); outline-offset: 4px;
+      color: var(--accent); transform: rotate(-8deg); opacity: .9; flex-shrink: 0;
+    }
+    .seal-top, .seal-bottom { font-size: .55rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; }
+    .seal-big { font-family: var(--serif); font-size: 1.65rem; font-weight: 700; line-height: 1.1; margin: .1rem 0; }
+    .seal-bottom { border-top: 1px solid currentColor; padding-top: .3rem; margin-top: .2rem; }
+    /* The month it lands, the mark changes colour. Worth the four lines. */
+    .seal-met { border-color: var(--marigold); outline-color: var(--marigold); color: #9A6A0F; background: var(--marigold-soft); }
 
     .panel { padding: 1.75rem; }
     .cta-line { font-family: var(--serif); font-size: clamp(1.15rem, 3.4vw, 1.5rem); font-weight: 600; margin: 1.5rem 0 0; color: var(--accent); }
@@ -160,6 +237,28 @@ const paceLine = s.met
 
     .pace { color: var(--muted); font-size: .92rem; margin: 1.1rem .2rem 0; }
 
+    .chips { list-style: none; display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 .9rem; padding: 0; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: .4rem; text-decoration: none;
+      padding: .4rem .75rem; border-radius: 999px; border: 1px solid var(--rule);
+      font-size: .92rem; font-variant-numeric: tabular-nums; transition: border-color .12s ease;
+    }
+    .chip:hover { border-color: var(--ink); }
+    .chip-common { border-color: var(--marigold); background: var(--marigold-soft); }
+    .chip-tag { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #8A6413; }
+
+    .people { margin-top: 2.5rem; }
+    .people-head h2 { font-size: 1.3rem; }
+    .people-head p { color: var(--muted); font-size: .9rem; margin: .35rem 0 1rem; max-width: 56ch; }
+    .dots { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+    .dots i, .dots a { width: 9px; height: 9px; border-radius: 50%; }
+    .dot-given { background: var(--marigold); }
+    .dot-you {
+      box-shadow: inset 0 0 0 1.5px var(--accent);
+      transition: transform .15s ease, background .15s ease;
+    }
+    .dot-you:hover { background: var(--accent); transform: scale(1.6); }
+
     .share { display: flex; gap: 1.5rem; align-items: center; justify-content: space-between; padding: 1.6rem 1.75rem; margin-top: 2.5rem; flex-wrap: wrap; }
     .share h2 { font-size: 1.3rem; }
     .share p { color: var(--muted); margin: .4rem 0 0; max-width: 46ch; font-size: .92rem; }
@@ -174,7 +273,18 @@ const paceLine = s.met
     footer { padding-bottom: 3rem; }
     footer p { margin-top: 1.25rem; max-width: 60ch; }
 
+    @media (max-width: 760px) {
+      .hero { grid-template-columns: 1fr; gap: 1.5rem; }
+      .seal { justify-self: end; margin-right: 1rem; }
+      .seal { width: 7.5rem; height: 7.5rem; }
+      .seal-big { font-size: 1.3rem; }
+    }
+
     @media (max-width: 620px) {
+      /* Separators dangle at the end of a wrapped line; the gap alone is enough. */
+      .creed { gap: .15rem 1.1rem; }
+      .creed li:not(:last-child)::after { content: none; }
+
       .panel { padding: 1.25rem; }
       .actions { flex-direction: column-reverse; align-items: stretch; }
       .qr { align-self: flex-start; align-items: flex-start; }
@@ -207,7 +317,7 @@ const paceLine = s.met
         const raisedEl = document.querySelector('[data-raised]');
         if (last && d.raised.paise !== last.raised.paise) {
           animate(raisedEl, last.raised.paise, d.raised.paise, fmt);
-          document.querySelector('[data-fill]').style.width = Math.min(d.percent, 100) + '%';
+          document.querySelector('[data-fill]').style.setProperty('--p', Math.min(d.percent, 100) / 100);
           document.querySelector('[data-pct]').textContent = Math.round(d.percent) + '%';
           document.querySelector('[data-cta]').textContent = d.callToAction;
           document.querySelector('[data-stat="shortfall"]').textContent = fmt(d.shortfall.paise);

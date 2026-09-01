@@ -106,7 +106,7 @@ renderer reads at runtime:
 import vercel from '@astrojs/vercel';
 export default defineConfig({
   output: 'server',
-  adapter: vercel({ includeFiles: ['public/fonts/inter-400.woff', /* …the rest… */] }),
+  adapter: vercel({ includeFiles: ['public/fonts/plex-400.woff', /* …the other four… */] }),
 });
 ```
 
@@ -119,6 +119,14 @@ database and nothing else changes.
 Everything an organisation needs to change is in `src/lib/defaults.mjs` and the
 admin screen: name, tagline, donate URL, goal, suggested amount, headline,
 sub-lines, footer note. The palette is the `THEME` object in the same file.
+
+Type is Zilla Slab for display and IBM Plex Sans for everything else — both
+SIL OFL. To swap either, drop the `.woff` into `public/fonts/` and change one
+line: the renderers only know them as `Display` and `Plex`.
+
+**Use the full or `latin` subset, never `latin-ext` alone.** The `-ext` files
+carry only accented characters, so ASCII renders as empty boxes — and satori
+falls back to the next registered face without raising anything.
 
 ## Known limits
 

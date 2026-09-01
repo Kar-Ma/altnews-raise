@@ -1,7 +1,7 @@
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
 import { h, text, serifLine, fonts, qrDataUri, EYEBROW } from './poster.mjs';
-import { formatINR } from './money.mjs';
+import { formatINR, formatCount } from './money.mjs';
 import { THEME } from './defaults.mjs';
 
 // People already screenshot the Razorpay receipt and post it. A receipt is a
@@ -25,14 +25,14 @@ export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.ink,
-    padding: 64, fontFamily: 'Inter', color: THEME.paper,
+    padding: 64, fontFamily: 'Plex', color: THEME.paper,
   }, [
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Lora', fontWeight: 700, fontSize: 34, color: THEME.paper }, s.org.name),
+      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 34, color: THEME.paper }, s.org.name),
       text({ fontSize: 22, color: '#9A9285' }, s.cycle.label),
     ]),
 
-    h({ flexDirection: 'column', marginTop: 'auto', marginBottom: 'auto' }, [
+    h({ flexDirection: 'column', marginTop: 'auto' }, [
       serifLine('I fund independent journalism.', {
         size: 84, color: THEME.paper, accent: THEME.accentOnDark, emphasisFrom: 2,
         lineHeight: 1.06, maxWidth: 880, tracking: -1.2,
@@ -40,8 +40,11 @@ export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1
       text({ fontSize: 30, fontWeight: 600, color: '#C9C0B1', marginTop: 26 },
         who ? `— ${who}` : `— a reader in ${s.cycle.monthName}`),
       // Off by default: plenty of donors would rather not publish the number.
+      // Social proof, not a receipt: the number that matters is how many.
+      text({ fontSize: 24, fontWeight: 600, color: THEME.marigold, marginTop: 14 },
+        `one of ${formatCount(s.supporters)} readers funding ${s.cycle.monthName}`),
       showAmount && amountPaise
-        ? text({ fontSize: 26, color: '#9A9285', marginTop: 8 }, `Chipped in ${formatINR(amountPaise)}`)
+        ? text({ fontSize: 24, color: '#9A9285', marginTop: 8 }, `Chipped in ${formatINR(amountPaise)}`)
         : null,
     ].filter(Boolean)),
 
