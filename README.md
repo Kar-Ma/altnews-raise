@@ -1,4 +1,4 @@
-# Raise Meter
+# Open Raise
 
 A live monthly fundraising meter for reader-funded organisations in India.
 
@@ -29,7 +29,7 @@ This does four things instead:
 
 ## Not a payment page
 
-Raise Meter never takes a payment, never creates one, and never stores a donor
+Open Raise never takes a payment, never creates one, and never stores a donor
 record. The Donate button and the QR point at the organisation's existing
 Razorpay page. All this does is read a total and draw it.
 
@@ -88,7 +88,7 @@ So: **run this yourself.** Fork it, deploy it under your own domain, put your ow
 key in your own environment. Do not hand a Razorpay key to anyone, including
 whoever showed you this.
 
-Raise Meter reads `amount`, `status`, and `amount_refunded`. It never writes donor
+Open Raise reads `amount`, `status`, and `amount_refunded`. It never writes donor
 fields to disk and never sends them anywhere.
 
 ### What gets counted
@@ -110,7 +110,7 @@ Pick whichever of these describes you.
 
 ### The quick way — Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FKar-Ma%2Fraise-meter&env=ADMIN_PASSWORD,SESSION_SALT&envDescription=A%20password%20for%20the%20admin%20screen%20and%20any%20random%20string%20for%20the%20session%20salt&project-name=raise-meter&repository-name=raise-meter)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FKar-Ma%2Fopen-raise&env=ADMIN_PASSWORD,SESSION_SALT&envDescription=A%20password%20for%20the%20admin%20screen%20and%20any%20random%20string%20for%20the%20session%20salt&project-name=open-raise&repository-name=open-raise)
 
 That forks the repo into your account and deploys it. Two things to know:
 
@@ -132,7 +132,7 @@ Railway, Fly, Render with a persistent volume, or any VPS. No key-value store
 needed: settings go in `data/state.json`, so give that directory a volume.
 
 ```bash
-git clone https://github.com/Kar-Ma/raise-meter && cd raise-meter
+git clone https://github.com/Kar-Ma/open-raise && cd open-raise
 npm install && npm run build
 ADMIN_PASSWORD=… SESSION_SALT=… node dist/server/entry.mjs
 ```
