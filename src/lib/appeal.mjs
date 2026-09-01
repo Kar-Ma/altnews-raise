@@ -83,10 +83,14 @@ export function isStale(updatedAt, nowMs = Date.now()) {
   return Number.isNaN(ms) ? true : ms > 7 * 86400000;
 }
 
-/** ?amount=500 pre-fills the Razorpay form; the vanity URL does not accept it. */
+/**
+ * Razorpay takes ?amount=<rupees> and pre-fills its form. Only the ways that
+ * declare it get the parameter — appending it to Danamojo would do nothing, and
+ * to a cheque would do less.
+ */
 export function giveUrl(way, amountPaise) {
   if (!way?.url) return null;
-  if (!amountPaise || !way.prefillUrl) return way.url;
+  if (!amountPaise || !way.prefillAmount) return way.url;
   const rupees = Math.round(amountPaise / 100);
-  return `${way.prefillUrl}${way.prefillUrl.includes('?') ? '&' : '?'}amount=${rupees}`;
+  return `${way.url}${way.url.includes('?') ? '&' : '?'}amount=${rupees}`;
 }

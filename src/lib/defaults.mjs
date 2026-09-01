@@ -39,8 +39,11 @@ export const DEFAULT_STATE = {
       blurb: 'Card, UPI, net banking or wallet. Add your PAN on the form to get an 80G receipt.',
       cta: 'Donate now',
       url: 'https://pages.razorpay.com/altnews',
-      // The long-form Razorpay URL accepts ?amount=500 and pre-fills the form.
-      prefillUrl: 'https://pages.razorpay.com/pl_FSiCHxHKfRFkrV/view/',
+      // Razorpay Payment Pages fill the amount box from ?amount=<rupees>, so
+      // the buttons below can land people on a form that is already filled in.
+      // Verified against the live page: the documented /pl_xxx/view/ form 404s,
+      // the vanity URL works.
+      prefillAmount: true,
       primary: true,
     },
     {
@@ -49,7 +52,7 @@ export const DEFAULT_STATE = {
       blurb: '₹250, ₹500 or ₹1,000 a month. Recurring support is what makes a newsroom plannable.',
       cta: 'Set up monthly',
       url: 'https://pravda-media-foundation.danamojo.org/',
-      prefillUrl: null,
+      prefillAmount: false,
       primary: false,
     },
     {
@@ -58,7 +61,7 @@ export const DEFAULT_STATE = {
       blurb: "Made out to 'Pravda Media Foundation', posted to 1008-1009 Satyamev Elite, Near Vakil Bridge, Opposite BRTS Bus Stop, Ambli, Ahmedabad 380058.",
       cta: null,
       url: null,
-      prefillUrl: null,
+      prefillAmount: false,
       primary: false,
     },
   ],
