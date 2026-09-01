@@ -106,7 +106,7 @@ renderer reads at runtime:
 import vercel from '@astrojs/vercel';
 export default defineConfig({
   output: 'server',
-  adapter: vercel({ includeFiles: ['public/fonts/plex-400.woff', /* …the other four… */] }),
+  adapter: vercel({ includeFiles: ['public/fonts/text-400.woff', /* …the other four… */] }),
 });
 ```
 
@@ -120,9 +120,12 @@ Everything an organisation needs to change is in `src/lib/defaults.mjs` and the
 admin screen: name, tagline, donate URL, goal, suggested amount, headline,
 sub-lines, footer note. The palette is the `THEME` object in the same file.
 
-Type is Zilla Slab for display and IBM Plex Sans for everything else — both
-SIL OFL. To swap either, drop the `.woff` into `public/fonts/` and change one
-line: the renderers only know them as `Display` and `Plex`.
+Type is **Bodoni Moda** for display and **Inter** for everything else, matching
+the Didone-plus-neo-grotesque of the organisation's existing appeal graphics.
+The Didone carries the headline and the figures only — its hairlines thin out
+below about 20px, so section headings stay in the sans. To swap either face,
+drop the `.woff` into `public/fonts/` and change one line: the renderers only
+know them as `Display` and `Text`.
 
 **Use the full or `latin` subset, never `latin-ext` alone.** The `-ext` files
 carry only accented characters, so ASCII renders as empty boxes — and satori

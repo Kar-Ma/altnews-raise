@@ -25,17 +25,17 @@ export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.ink,
-    padding: 64, fontFamily: 'Plex', color: THEME.paper,
+    padding: 64, fontFamily: 'Text', color: THEME.paper,
   }, [
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 34, color: THEME.paper }, s.org.name),
+      text({ fontFamily: 'Display', fontWeight: 800, fontSize: 32, color: THEME.paper }, s.org.name),
       text({ fontSize: 22, color: '#9A9285' }, s.cycle.label),
     ]),
 
     h({ flexDirection: 'column', marginTop: 'auto' }, [
       serifLine('I fund independent journalism.', {
-        size: 84, color: THEME.paper, accent: THEME.accentOnDark, emphasisFrom: 2,
-        lineHeight: 1.06, maxWidth: 880, tracking: -1.2,
+        size: 72, weight: 800, color: THEME.paper, accent: THEME.accentOnDark, emphasisFrom: 2,
+        lineHeight: 1.14, maxWidth: 900,
       }),
       text({ fontSize: 30, fontWeight: 600, color: '#C9C0B1', marginTop: 26 },
         who ? `— ${who}` : `— a reader in ${s.cycle.monthName}`),

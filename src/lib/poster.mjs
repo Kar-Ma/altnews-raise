@@ -16,11 +16,11 @@ export async function fonts() {
   if (fontCache) return fontCache;
   const load = async (file) => new Uint8Array(await readFile(resolve(FONT_DIR, file)));
   fontCache = [
-    { name: 'Plex', data: await load('plex-400.woff'), weight: 400, style: 'normal' },
-    { name: 'Plex', data: await load('plex-600.woff'), weight: 600, style: 'normal' },
-    { name: 'Plex', data: await load('plex-700.woff'), weight: 700, style: 'normal' },
-    { name: 'Display', data: await load('display-600.woff'), weight: 600, style: 'normal' },
+    { name: 'Text', data: await load('text-400.woff'), weight: 400, style: 'normal' },
+    { name: 'Text', data: await load('text-600.woff'), weight: 600, style: 'normal' },
+    { name: 'Text', data: await load('text-700.woff'), weight: 700, style: 'normal' },
     { name: 'Display', data: await load('display-700.woff'), weight: 700, style: 'normal' },
+    { name: 'Display', data: await load('display-800.woff'), weight: 800, style: 'normal' },
   ];
   return fontCache;
 }
@@ -44,7 +44,7 @@ export const h = (style, children) => ({
 export const text = (style, content) => h({ ...style }, content);
 
 export const EYEBROW = {
-  fontFamily: 'Plex', fontSize: 20, fontWeight: 600, letterSpacing: 2.6,
+  fontFamily: 'Text', fontSize: 20, fontWeight: 600, letterSpacing: 2.6,
   textTransform: 'uppercase', color: THEME.muted,
 };
 
@@ -53,13 +53,13 @@ export const EYEBROW = {
  * coloured without inline-span guesswork, and the display face's space glyph renders
  * zero-width under satori, which silently welds words together.
  */
-export function serifLine(str, { size, color = THEME.ink, accent = THEME.accent, emphasisFrom = Infinity, maxWidth, lineHeight = 1.02, tracking = 0 }) {
+export function serifLine(str, { size, weight = 700, color = THEME.ink, accent = THEME.accent, emphasisFrom = Infinity, maxWidth, lineHeight = 1.06, tracking = 0 }) {
   return h({ flexWrap: 'wrap', maxWidth }, str.split(' ').map((word, i) => {
     const glyphs = {
-      fontFamily: 'Display', fontWeight: 700, fontSize: size, lineHeight,
+      fontFamily: 'Display', fontWeight: weight, fontSize: size, lineHeight,
       letterSpacing: tracking, color: i >= emphasisFrom ? accent : color,
     };
-    // ₹ is absent from the display face, and satori drops the margin of any box whose text
+    // ₹ sits in a different face when the display cut lacks it, and satori drops the margin of any box whose text
     // needed a fallback font. Giving the symbol its own box keeps the space.
     if (word.includes('₹')) {
       const parts = word.split('₹').flatMap((p, j) => (j === 0 ? [p] : ['₹', p])).filter(Boolean);
@@ -82,19 +82,19 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
-    padding: 64, fontFamily: 'Plex', color: THEME.ink,
+    padding: 64, fontFamily: 'Text', color: THEME.ink,
   }, [
     // Masthead
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 40 }, s.org.name),
-      text({ fontFamily: 'Plex', fontSize: 24, color: THEME.muted }, s.org.tagline),
+      text({ fontFamily: 'Display', fontWeight: 800, fontSize: 38 }, s.org.name),
+      text({ fontFamily: 'Text', fontSize: 24, color: THEME.muted }, s.org.tagline),
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 22, marginBottom: 40 }),
 
-    serifLine(s.campaign.headline, { size: 80, maxWidth: 840, emphasisFrom: words.length - 1, tracking: -1.5 }),
+    serifLine(s.campaign.headline, { size: 66, weight: 800, maxWidth: 900, emphasisFrom: words.length - 1, lineHeight: 1.1 }),
 
     h({ flexDirection: 'column', marginTop: 30 }, subLines.map((line, i) => text({
-      fontFamily: 'Plex', fontSize: 26, lineHeight: 1.42,
+      fontFamily: 'Text', fontSize: 26, lineHeight: 1.42,
       fontWeight: i === subLines.length - 1 ? 600 : 400,
       color: i === subLines.length - 1 ? THEME.accent : THEME.muted,
     }, line + '.'))),
@@ -109,8 +109,8 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
         text(EYEBROW, 'Goal'),
       ]),
       h({ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 }, [
-        serifLine(formatINR(s.raisedPaise), { size: 74, tracking: -2, lineHeight: 1 }),
-        serifLine(formatINR(s.goalPaise), { size: 36, color: THEME.muted, lineHeight: 1 }),
+        serifLine(formatINR(s.raisedPaise), { size: 68, weight: 800, lineHeight: 1.05 }),
+        serifLine(formatINR(s.goalPaise), { size: 34, color: THEME.muted, lineHeight: 1.05 }),
       ]),
       h({
         marginTop: 24, height: 24, borderRadius: 999, backgroundColor: THEME.track,
@@ -131,8 +131,8 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
     // The ask
     h({ flexDirection: 'column', marginTop: 38 }, [
       serifLine(s.met ? 'Goal met.' : `${formatShort(s.shortfallPaise)} short`,
-        { size: 58, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
-      text({ fontFamily: 'Plex', fontSize: 30, fontWeight: 600, marginTop: 8 },
+        { size: 54, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
+      text({ fontFamily: 'Text', fontSize: 30, fontWeight: 600, marginTop: 8 },
         s.met
           ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
           : `≈ ${formatCount(s.readersNeeded)} more readers at ${formatINR(s.suggestedPaise)}`),

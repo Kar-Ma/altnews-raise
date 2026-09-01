@@ -12,22 +12,22 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
-    padding: 56, fontFamily: 'Plex', color: THEME.ink,
+    padding: 56, fontFamily: 'Text', color: THEME.ink,
   }, [
     h({ alignItems: 'baseline', justifyContent: 'space-between' }, [
-      text({ fontFamily: 'Display', fontWeight: 700, fontSize: 32 }, s.org.name),
+      text({ fontFamily: 'Display', fontWeight: 800, fontSize: 30 }, s.org.name),
       text({ fontSize: 22, color: THEME.muted }, `${s.cycle.label} · day ${s.cycle.dayOfCycle} of ${s.cycle.totalDays}`),
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 18, marginBottom: 26 }),
 
-    serifLine(s.campaign.headline, { size: 46, maxWidth: 900, lineHeight: 1.06, tracking: -0.8,
+    serifLine(s.campaign.headline, { size: 42, weight: 800, maxWidth: 960, lineHeight: 1.12,
       emphasisFrom: s.campaign.headline.trim().split(' ').length - 1 }),
     h({ height: 26 }),
 
     h({ alignItems: 'flex-end' }, [
       // serifLine, not text: a box whose content falls back to another font for
       // ₹ measures short in satori, and the next element overlaps it.
-      serifLine(formatINR(s.raisedPaise), { size: 84, tracking: -2, lineHeight: 1 }),
+      serifLine(formatINR(s.raisedPaise), { size: 74, weight: 800, lineHeight: 1.05 }),
       text({ fontSize: 26, color: THEME.muted, marginLeft: 18, marginBottom: 16 }, `of ${formatINR(s.goalPaise)}`),
     ]),
 
@@ -49,7 +49,7 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
     h({ marginTop: 'auto', alignItems: 'flex-end', justifyContent: 'space-between' }, [
       h({ flexDirection: 'column', maxWidth: 780 }, [
         serifLine(s.met ? 'Goal met.' : `${formatShort(s.shortfallPaise)} short`,
-          { size: 52, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
+          { size: 46, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
         text({ fontSize: 26, fontWeight: 600, marginTop: 8 },
           s.met
             ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`
