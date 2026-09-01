@@ -1,9 +1,5 @@
-import { randomUUID } from 'node:crypto';
-import { readState, writeState, resetState } from '../../lib/store.mjs';
-import { invalidate, credentials } from '../../lib/source.mjs';
+import { readState, writeState } from '../../lib/store.mjs';
 import { toPaise } from '../../lib/money.mjs';
-import { pingRazorpay } from '../../lib/razorpay.mjs';
-import { PRESETS } from '../../lib/presets.mjs';
 import { isAuthed, signIn, signOut } from '../../lib/auth.mjs';
 
 export const prerender = false;
@@ -11,12 +7,14 @@ export const prerender = false;
 const back = (note) =>
   new Response(null, {
     status: 303,
-    headers: { location: '/admin' + (note ? `?note=${encodeURIComponent(note)}` : '') },
+    headers: { location: '/settings' + (note ? `?note=${encodeURIComponent(note)}` : '') },
   });
 
+// People paste "5,00,000" out of a spreadsheet. Take it.
 const num = (form, field) => {
-  const value = Number(form.get(field));
-  return Number.isFinite(value) ? value : null;
+  const raw = String(form.get(field) ?? '').replace(/[,\s₹]/g, '');
+  const value = Number(raw);
+  return raw !== '' && Number.isFinite(value) ? value : null;
 };
 
 const str = (form, field, fallback, max) =>
@@ -27,113 +25,72 @@ export async function POST({ request, cookies }) {
   const action = form.get('action');
 
   if (action === 'login') {
-    return signIn(cookies, form.get('password')) ? back() : back('Wrong password.');
+    return signIn(cookies, form.get('password')) ? back() : back('That password did not match.');
   }
   if (action === 'logout') {
     signOut(cookies);
     return back();
   }
-
   if (!isAuthed(cookies)) return new Response('Not signed in', { status: 401 });
 
   const state = await readState();
 
   switch (action) {
-    case 'campaign': {
+    // The one they will use most: type today's total, press save.
+    case 'figures': {
+      const raised = num(form, 'raised');
       const goal = num(form, 'goal');
-      const suggested = num(form, 'suggested');
-      if (!goal || goal <= 0) return back('Goal must be more than zero.');
-      if (!suggested || suggested <= 0) return back('Suggested amount must be more than zero.');
+      const supporters = num(form, 'supporters');
+      if (raised === null || raised < 0) return back('Enter the amount raised as a number.');
+      if (!goal || goal <= 0) return back('The goal has to be more than zero.');
       await writeState({
-        org: {
-          name: str(form, 'orgName', state.org.name, 60),
-          tagline: str(form, 'tagline', state.org.tagline, 120),
-          donateUrl: str(form, 'donateUrl', state.org.donateUrl, 300),
-        },
         campaign: {
+          raisedPaise: toPaise(raised),
           goalPaise: toPaise(goal),
-          suggestedPaise: toPaise(suggested),
+          supporters: supporters && supporters > 0 ? Math.round(supporters) : 0,
+          // Every save re-stamps the page: the timestamp is the only thing
+          // telling a reader whether to believe the number.
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      return back('Saved. The page and the poster already show it.');
+    }
+
+    case 'wording': {
+      const suggested = num(form, 'suggested');
+      if (!suggested || suggested <= 0) return back('The suggested amount has to be more than zero.');
+      await writeState({
+        campaign: {
           headline: str(form, 'headline', state.campaign.headline, 120),
           subhead: str(form, 'subhead', state.campaign.subhead, 300),
           note: str(form, 'note', state.campaign.note, 300),
+          suggestedPaise: toPaise(suggested),
         },
       });
-      break;
+      return back('Wording saved.');
     }
 
-    case 'offline-add': {
-      const amount = num(form, 'amount');
-      if (!amount || amount <= 0) return back('Enter an amount above zero.');
-      await writeState({
-        offline: [...state.offline, {
-          id: randomUUID(),
-          label: str(form, 'label', 'Offline contribution', 80) || 'Offline contribution',
-          amountPaise: toPaise(amount),
-          dateISO: str(form, 'date', '', 10),
-        }],
-      });
-      break;
+    case 'ways': {
+      const ways = state.ways.map((way, i) => ({
+        ...way,
+        title: str(form, `title-${i}`, way.title, 60),
+        blurb: str(form, `blurb-${i}`, way.blurb, 300),
+        url: str(form, `url-${i}`, way.url ?? '', 300) || null,
+        cta: str(form, `cta-${i}`, way.cta ?? '', 40) || null,
+      }));
+      await writeState({ ways });
+      return back('Ways to give saved.');
     }
 
-    case 'offline-remove':
-      await writeState({ offline: state.offline.filter((e) => e.id !== form.get('id')) });
-      break;
-
-    case 'source':
-      await writeState({ source: { mode: form.get('mode') === 'live' ? 'live' : 'demo' } });
-      break;
-
-    case 'demo': {
-      const day = num(form, 'day');
-      const strength = num(form, 'strength');
-      await writeState({
-        demo: {
-          dayOverride: day && day > 0 ? day : null,
-          strength: strength && strength > 0 ? Math.min(strength, 1.4) : state.demo.strength,
-        },
-      });
-      break;
+    case 'publish': {
+      const preview = form.get('preview') === 'on';
+      await writeState({ preview });
+      return back(preview
+        ? 'Back to preview. The page is hidden from search again.'
+        : 'Published. The preview banner is gone and search engines are allowed in.');
     }
-
-    case 'test-razorpay': {
-      const creds = credentials();
-      const result = creds
-        ? await pingRazorpay(creds)
-        : { ok: false, message: 'No RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in this environment yet.' };
-      await writeState({
-        source: { lastTest: { ...result, atISO: new Date().toISOString() } },
-      });
-      break;
-    }
-
-    case 'preset': {
-      const preset = PRESETS[form.get('preset')];
-      if (!preset) return back('Unknown starting point.');
-      // Offline entries belong to whoever typed them; a preset should not
-      // silently delete money someone recorded by hand.
-      await writeState({ ...preset.state, offline: state.offline });
-      break;
-    }
-
-    case 'reset':
-      await resetState();
-      break;
 
     default:
-      return back('Unknown action.');
+      return back('That button did something unexpected. Nothing was changed.');
   }
-
-  invalidate();
-  return back(NOTES[action]);
 }
-
-const NOTES = {
-  campaign: 'Campaign saved. The page and the poster already show it.',
-  'offline-add': 'Contribution added to the public total.',
-  'offline-remove': 'Contribution removed.',
-  source: 'Data source switched.',
-  demo: 'Demo updated.',
-  'test-razorpay': 'Connection tested.',
-  preset: 'Starting point loaded.',
-  reset: 'Everything reset to defaults.',
-};

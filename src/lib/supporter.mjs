@@ -19,9 +19,9 @@ export function cleanName(raw) {
 }
 
 export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1080, height = 1080 } = {}) {
-  const qr = await qrDataUri(s.org.donateUrl);
+  const qr = await qrDataUri(s.donateUrl);
   const who = cleanName(name);
-  const shortUrl = s.org.donateUrl.replace(/^https?:\/\//, '');
+  const shortUrl = s.donateUrl.replace(/^https?:\/\//, '');
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.ink,

@@ -8,7 +8,7 @@ import { THEME } from './defaults.mjs';
 // the preview should already carry the ask — most people never click through.
 
 export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
-  const qr = await qrDataUri(s.org.donateUrl);
+  const qr = await qrDataUri(s.donateUrl);
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
@@ -58,7 +58,7 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
       h({ flexDirection: 'column', alignItems: 'center' }, [
         h({ padding: 8, backgroundColor: '#FFFFFF', borderRadius: 8, border: `1px solid ${THEME.rule}` },
           [{ type: 'img', props: { src: qr, width: 104, height: 104 } }]),
-        text({ ...EYEBROW, fontSize: 15, marginTop: 8 }, s.org.qrCaption),
+        text({ ...EYEBROW, fontSize: 15, marginTop: 8 }, s.qrCaption),
       ]),
     ]),
   ]);

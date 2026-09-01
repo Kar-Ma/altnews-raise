@@ -1,11 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getSnapshot } from '../lib/source.mjs';
+import { getAppeal } from '../lib/appeal.mjs';
 import { formatShort } from '../lib/money.mjs';
 
 export const prerender = false;
 
-const s = await getSnapshot();
+const s = await getAppeal();
 const pageUrl = new URL('/', Astro.url).href;
 const tweet = s.met
   ? `${s.org.name} met its ${s.cycle.monthName} goal. Reader-funded journalism, funded by readers.`
@@ -14,8 +14,8 @@ const shareHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tw
 const fileName = `${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}.png`;
 ---
 <Base title={`${s.org.name} — ${s.cycle.label} poster`} description={s.callToAction}
-  noindex={s.mode === 'demo'}>
-  {s.mode === 'demo' && (
+  noindex={s.preview}>
+  {s.preview && (
     <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
   )}
 

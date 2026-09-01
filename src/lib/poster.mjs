@@ -76,10 +76,10 @@ export async function qrDataUri(url) {
 }
 
 export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
-  const qr = await qrDataUri(s.org.donateUrl);
+  const qr = await qrDataUri(s.donateUrl);
   const words = s.campaign.headline.trim().split(' ');
   const subLines = s.campaign.subhead.split('.').map((l) => l.trim()).filter(Boolean);
-  const shortUrl = s.org.donateUrl.replace(/^https?:\/\//, '');
+  const shortUrl = s.donateUrl.replace(/^https?:\/\//, '');
 
   const tree = h({
     width, height, flexDirection: 'column', backgroundColor: THEME.paper,
@@ -155,7 +155,7 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
           padding: 12, backgroundColor: '#FFFFFF', borderRadius: 12,
           border: `1px solid ${THEME.rule}`,
         }, [{ type: 'img', props: { src: qr, width: 176, height: 176 } }]),
-        text({ ...EYEBROW, fontSize: 17, marginTop: 10 }, s.org.qrCaption),
+        text({ ...EYEBROW, fontSize: 17, marginTop: 10 }, s.qrCaption),
       ]),
     ]),
   ]);

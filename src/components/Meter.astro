@@ -24,8 +24,12 @@ const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
 
   <div class="meter-foot">
     <span class="pct num" data-pct>{Math.round(s.percent)}%</span>
-    <span class="dot">·</span>
-    <span class="num">{formatCount(s.supporters)} supporters</span>
+    {s.supporters > 0 && (
+      <>
+        <span class="dot">·</span>
+        <span class="num">{formatCount(s.supporters)} supporters</span>
+      </>
+    )}
     <span class="dot">·</span>
     <span class="num">day {s.cycle.dayOfCycle} of {s.cycle.totalDays}</span>
   </div>

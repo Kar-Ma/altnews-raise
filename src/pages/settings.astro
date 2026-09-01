@@ -1,0 +1,298 @@
+---
+import Base from '../layouts/Base.astro';
+import { getAppeal, updatedLabel, isStale } from '../lib/appeal.mjs';
+import { readState, storeIsEphemeral } from '../lib/store.mjs';
+import { toRupees, formatINR } from '../lib/money.mjs';
+import { isAuthed, usingDefaultPassword, adminLocked } from '../lib/auth.mjs';
+
+export const prerender = false;
+
+const authed = isAuthed(Astro.cookies);
+const note = Astro.url.searchParams.get('note');
+const state = await readState();
+const s = authed ? await getAppeal() : null;
+const locked = adminLocked();
+const ephemeral = storeIsEphemeral();
+const thanksUrl = new URL('/thanks', Astro.url).href;
+---
+<Base title="Settings — Alt News appeal" description="Private settings page." noindex={true}>
+  <main class="wrap">
+    {!authed ? (
+      <div class="gate">
+        <h1>{state.org.name} appeal — settings</h1>
+        <p class="gate-lede">
+          For whoever runs the appeal. It changes what the page says; it cannot see or move money.
+          If you came here to donate, <a href="/">the page is this way</a>.
+        </p>
+
+        {locked ? (
+          <div class="card panel narrow">
+            <p class="warn"><strong>Locked.</strong> No password has been set on this deployment, so
+              this screen refuses to open rather than fall back to a default anyone could guess.</p>
+            <p class="hint">Set <code>ADMIN_PASSWORD</code> in the hosting environment and redeploy.
+              The public page keeps working meanwhile.</p>
+          </div>
+        ) : (
+          <form class="card panel narrow" method="post" action="/api/admin">
+            <input type="hidden" name="action" value="login" />
+            <label><span>Password</span>
+              <input type="password" name="password" autocomplete="current-password" required autofocus />
+            </label>
+            <button class="btn btn-primary" type="submit">Open settings</button>
+            {note && <p class="warn">{note}</p>}
+            {usingDefaultPassword() && (
+              <p class="hint">Running locally with no password set, so it is <code>letmein</code>.</p>
+            )}
+          </form>
+        )}
+      </div>
+    ) : (
+      <>
+        <header class="bar">
+          <div>
+            <h1>{s.cycle.label}</h1>
+            <p class="bar-sub">{s.org.name} appeal · settings</p>
+          </div>
+          <div class="bar-right">
+            <span class={s.preview ? 'pill' : 'pill pill-live'}>{s.preview ? 'Preview' : 'Published'}</span>
+            <a class="btn btn-ghost" href="/" target="_blank" rel="noopener">See the page ↗</a>
+          </div>
+        </header>
+
+        {note && <p class="note">{note}</p>}
+        {ephemeral && (
+          <p class="note note-bad"><strong>Nothing you save here will stick.</strong> This deployment has
+            no storage attached, so its filesystem resets between visits. Connect a key-value store
+            (Vercel KV or Upstash) and set <code>KV_REST_API_URL</code> and <code>KV_REST_API_TOKEN</code>.</p>
+        )}
+
+        <div class="cols">
+          <div class="stack">
+            <!-- The whole job, most weeks: two numbers and a button. -->
+            <section class="card panel">
+              <h2>This month's figures</h2>
+              <p class="hint">
+                Look at Razorpay, Danamojo and anything banked directly, add them up, and put the
+                total here. Nothing reads your payment accounts — which is why the number is yours
+                and not a guess made from one of the three.
+              </p>
+              <form method="post" action="/api/admin" class="fields">
+                <input type="hidden" name="action" value="figures" />
+                <label class="big">
+                  <span>Raised so far this month (₹)</span>
+                  <input class="num big-input" type="text" inputmode="numeric" name="raised"
+                    value={toRupees(state.campaign.raisedPaise)} required autocomplete="off" />
+                </label>
+                <label>
+                  <span>Goal for {s.cycle.monthName} (₹)</span>
+                  <input class="num" type="text" inputmode="numeric" name="goal"
+                    value={toRupees(state.campaign.goalPaise)} required autocomplete="off" />
+                </label>
+                <label>
+                  <span>Number of supporters <em>(optional)</em></span>
+                  <input class="num" type="text" inputmode="numeric" name="supporters"
+                    value={state.campaign.supporters || ''} placeholder="leave blank to hide" autocomplete="off" />
+                </label>
+                <div class="span2 save-row">
+                  <button class="btn btn-primary" type="submit">Save figures</button>
+                  <span class="stamp">
+                    {updatedLabel(s.updatedAt)}
+                    {isStale(s.updatedAt) && ' — the page is telling readers it may be behind'}
+                  </span>
+                </div>
+              </form>
+            </section>
+
+            <section class="card panel">
+              <h2>Wording</h2>
+              <form method="post" action="/api/admin" class="fields">
+                <input type="hidden" name="action" value="wording" />
+                <label class="span2"><span>Headline — the last word is set in red</span>
+                  <input type="text" name="headline" value={state.campaign.headline} maxlength="120" />
+                </label>
+                <label class="span2"><span>The lines under it — one sentence each, last one highlighted</span>
+                  <input type="text" name="subhead" value={state.campaign.subhead} maxlength="300" />
+                </label>
+                <label><span>Suggested donation (₹)</span>
+                  <input class="num" type="text" inputmode="numeric" name="suggested"
+                    value={toRupees(state.campaign.suggestedPaise)} required autocomplete="off" />
+                </label>
+                <label class="span2"><span>Footer line</span>
+                  <input type="text" name="note" value={state.campaign.note} maxlength="300" />
+                </label>
+                <div class="span2"><button class="btn btn-ghost" type="submit">Save wording</button></div>
+              </form>
+              <p class="hint">
+                The suggested amount is the unit behind "another {s.readersNeeded} readers at
+                {' '}{formatINR(s.suggestedPaise)}". Set it to whatever most people actually give.
+              </p>
+            </section>
+
+            <section class="card panel">
+              <h2>Ways to give</h2>
+              <p class="hint">Three routes on the public page. Clear a link to drop that option.</p>
+              {state.ways.map((way, i) => (
+                <form method="post" action="/api/admin" class="way-form">
+                  <input type="hidden" name="action" value="ways" />
+                  {state.ways.map((other, j) => j !== i && (
+                    <>
+                      <input type="hidden" name={`title-${j}`} value={other.title} />
+                      <input type="hidden" name={`blurb-${j}`} value={other.blurb} />
+                      <input type="hidden" name={`url-${j}`} value={other.url ?? ''} />
+                      <input type="hidden" name={`cta-${j}`} value={other.cta ?? ''} />
+                    </>
+                  ))}
+                  <div class="fields">
+                    <label><span>Heading</span>
+                      <input type="text" name={`title-${i}`} value={way.title} maxlength="60" />
+                    </label>
+                    <label><span>Button text</span>
+                      <input type="text" name={`cta-${i}`} value={way.cta ?? ''} maxlength="40" placeholder="none" />
+                    </label>
+                    <label class="span2"><span>Description</span>
+                      <input type="text" name={`blurb-${i}`} value={way.blurb} maxlength="300" />
+                    </label>
+                    <label class="span2"><span>Link</span>
+                      <input type="url" name={`url-${i}`} value={way.url ?? ''} maxlength="300" placeholder="no link — text only" />
+                    </label>
+                    <div class="span2"><button class="btn btn-ghost" type="submit">Save this one</button></div>
+                  </div>
+                </form>
+              ))}
+            </section>
+
+            <section class="card panel">
+              <h2>Send donors back here afterwards</h2>
+              <p class="hint">
+                Razorpay can send people to a page of your choosing once they have paid, instead of its
+                own receipt screen. Point it at the thank-you page and they get a card worth posting.
+              </p>
+              <ol class="guide-steps">
+                <li>Razorpay Dashboard → your Payment Page → <strong>Edit</strong> → <strong>Page Settings</strong>.</li>
+                <li>Choose <strong>Redirect to your website</strong> and paste:
+                  <code class="copyable">{thanksUrl}</code>
+                </li>
+                <li>Save. Nothing else changes about how you take money.</li>
+              </ol>
+              <a class="btn btn-ghost" href="/thanks" target="_blank" rel="noopener">Look at that page ↗</a>
+            </section>
+
+            <section class="card panel">
+              <h2>Publishing</h2>
+              <form method="post" action="/api/admin" class="publish">
+                <input type="hidden" name="action" value="publish" />
+                <label class="check">
+                  <input type="checkbox" name="preview" checked={state.preview} />
+                  <span>Keep this a preview</span>
+                </label>
+                <button class="btn btn-ghost" type="submit">Save</button>
+              </form>
+              <p class="hint">
+                While it is a preview the page carries a banner saying the figures are illustrative and
+                asks search engines to stay out. Untick it when the numbers are real and you are ready
+                for people to find it.
+              </p>
+            </section>
+
+            <div class="footer-actions">
+              <form method="post" action="/api/admin">
+                <input type="hidden" name="action" value="logout" />
+                <button class="btn btn-ghost" type="submit">Sign out</button>
+              </form>
+            </div>
+          </div>
+
+          <aside class="preview">
+            <div class="card panel">
+              <h2>As it stands</h2>
+              <dl class="readout">
+                <div><dt>Raised</dt><dd class="num strong">{formatINR(s.raisedPaise)}</dd></div>
+                <div><dt>Goal</dt><dd class="num">{formatINR(s.goalPaise)}</dd></div>
+                <div><dt>Percent</dt><dd class="num">{Math.round(s.percent)}%</dd></div>
+                <div><dt>Days left</dt><dd class="num">{s.cycle.daysLeft}</dd></div>
+              </dl>
+              <p class="cta">{s.callToAction}</p>
+            </div>
+
+            <div class="card panel">
+              <h2>Images</h2>
+              <img src={`/poster.png?v=${encodeURIComponent(s.updatedAt ?? '0')}`}
+                alt="This month's poster" width="1080" height="1350" />
+              <p class="hint">Redrawn from the figures above every time it loads.</p>
+              <div class="downloads">
+                <a class="btn btn-primary" href="/poster.png"
+                  download={`altnews-${s.cycle.id}.png`}>Download poster</a>
+                <a class="btn btn-ghost" href="/og.png" download={`altnews-${s.cycle.id}-link-card.png`}>Link card</a>
+                <a class="btn btn-ghost" href="/poster" target="_blank" rel="noopener">Sharing options ↗</a>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </>
+    )}
+  </main>
+
+  <style>
+    main { padding-bottom: 4rem; }
+    .gate { max-width: 28rem; padding: 4rem 0; }
+    .gate h1 { font-size: 1.8rem; margin: 0 0 .75rem; }
+    .gate-lede { color: var(--muted); font-size: .95rem; margin: 0 0 1.5rem; }
+    .narrow { display: flex; flex-direction: column; gap: .9rem; }
+
+    .bar { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding: 2rem 0 1.25rem; flex-wrap: wrap; }
+    .bar h1 { font-size: clamp(1.5rem, 3.5vw, 2.1rem); }
+    .bar-sub { margin: .3rem 0 0; font-size: .84rem; color: var(--muted); }
+    .bar-right { display: flex; align-items: center; gap: .6rem; }
+    .pill { font-size: .74rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; padding: .3rem .6rem; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); }
+    .pill-live { border-color: var(--good); color: var(--good); background: #F0F5F1; }
+
+    .note { background: var(--marigold-soft); border: 1px solid #E7CF95; color: #7A5610; padding: .7rem 1rem; border-radius: 9px; font-size: .9rem; }
+    .note-bad { background: var(--accent-soft); border-color: #F0CFCF; color: #7A1216; }
+
+    .cols { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(17rem, .85fr); gap: 1rem; align-items: start; }
+    .stack { display: flex; flex-direction: column; gap: 1rem; }
+    .panel { padding: 1.4rem; }
+    h2 { font-size: 1.15rem; margin-bottom: .3rem; }
+
+    label { display: flex; flex-direction: column; gap: .35rem; font-size: .78rem; font-weight: 600; color: var(--muted); }
+    label em { font-style: normal; font-weight: 400; }
+    input {
+      font: inherit; font-size: .95rem; font-weight: 400; padding: .6rem .7rem; border-radius: 8px;
+      border: 1px solid var(--rule); background: var(--paper); color: var(--ink); width: 100%;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input.num { font-variant-numeric: tabular-nums; }
+    .big-input { font-family: var(--serif); font-size: 1.7rem; font-weight: 800; padding: .5rem .7rem; }
+
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; align-items: end; margin-top: 1rem; }
+    .fields .span2, .fields .big { grid-column: 1 / -1; }
+    .save-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+    .stamp { font-size: .82rem; color: var(--muted); }
+    .check { flex-direction: row; align-items: center; gap: .55rem; font-weight: 500; color: var(--ink); }
+    .publish { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+
+    .way-form { border-top: 1px solid var(--rule); margin-top: 1.1rem; padding-top: .3rem; }
+    .guide-steps { margin: 1rem 0; padding-left: 1.3rem; font-size: .9rem; }
+    .guide-steps li + li { margin-top: .5rem; }
+    .copyable { display: block; margin-top: .4rem; padding: .5rem .7rem; background: var(--paper); border: 1px solid var(--rule); border-radius: 7px; font-size: .82rem; word-break: break-all; }
+
+    .hint { color: var(--muted); font-size: .85rem; margin: .6rem 0 0; max-width: 64ch; }
+    .warn { color: #7A1216; font-size: .88rem; margin: 0; }
+    .footer-actions { padding-bottom: 1rem; }
+
+    .preview { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1.25rem; }
+    .readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .65rem 1rem; margin: .8rem 0 0; }
+    .readout dt { font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .readout dd { margin: .1rem 0 0; font-size: 1rem; }
+    .readout .strong { font-weight: 800; font-size: 1.2rem; }
+    .cta { font-size: .88rem; color: var(--accent); margin: 1rem 0 0; }
+    .preview img { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 8px; margin-top: .8rem; }
+    .downloads { display: flex; flex-direction: column; gap: .5rem; margin-top: .9rem; }
+
+    @media (max-width: 900px) {
+      .cols { grid-template-columns: 1fr; }
+      .preview { position: static; }
+      .fields { grid-template-columns: 1fr; }
+    }
+  </style>
+</Base>

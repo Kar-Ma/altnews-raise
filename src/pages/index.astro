@@ -1,62 +1,48 @@
 ---
 import Base from '../layouts/Base.astro';
 import Meter from '../components/Meter.astro';
-import { getSnapshot } from '../lib/source.mjs';
+import { getAppeal, updatedLabel, isStale, giveUrl } from '../lib/appeal.mjs';
 import { formatINR, formatShort, formatCount } from '../lib/money.mjs';
 import { qrSvg } from '../lib/qr.mjs';
 
 export const prerender = false;
 
-const s = await getSnapshot();
-const qr = await qrSvg(s.org.donateUrl);
+const s = await getAppeal();
+const qr = await qrSvg(s.donateUrl);
 
-// The last word carries the address to the reader — red on the page for the
-// same reason it is red on the poster.
-const headWords = s.campaign.headline.trim().split(' ');
-const headLead = headWords.slice(0, -1).join(' ');
-const headLast = headWords.at(-1);
+// The last word goes red, on the page and on the poster alike.
+const words = s.campaign.headline.trim().split(' ');
+const headLead = words.slice(0, -1).join(' ');
+const headLast = words.at(-1);
+const creed = s.campaign.subhead.split('.').map((l) => l.trim()).filter(Boolean);
 
-const creed = s.campaign.subhead.split('.').map((line) => line.trim()).filter(Boolean);
-
-// One dot per reader who has given. Deliberately not a second progress bar:
-// readers-given over readers-needed is a different ratio from money raised over
-// goal (a few large gifts skew it), and two meters disagreeing on the same
-// screen reads as an error. This one only says: here are the people.
-const DOT_BUDGET = 900;
-const dotUnit = Math.max(Math.ceil(s.supporters / DOT_BUDGET), 1);
-const dotsGiven = Math.round(s.supporters / dotUnit);
-
-// Ladders people actually give on, anchored to the org's own suggested amount.
-const chips = [1, 2, 5, 10].map((multiple) => s.suggestedPaise * multiple);
-const paceLine = s.met
-  ? `Goal met with ${s.cycle.daysLeft} days to spare.`
-  : s.projectedPaise === null
-    ? 'Too early in the month to project a finish.'
-    : s.onTrack
-      ? `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)} — above goal.`
-      : `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)}, ${formatShort(Math.max(s.goalPaise - s.projectedPaise, 0))} under goal.`;
+const chips = [1, 2, 5, 10].map((n) => s.suggestedPaise * n);
+const primary = s.ways.find((w) => w.primary) ?? s.ways[0];
+const others = s.ways.filter((w) => w !== primary);
+const stale = isStale(s.updatedAt);
 ---
-<Base title={`${s.org.name} — ${s.cycle.label} appeal`} description={s.callToAction}
-  noindex={s.mode === 'demo'}>
-  {s.mode === 'demo' && (
+<Base
+  title={`Support ${s.org.name} — ${s.cycle.label}`}
+  description={s.callToAction}
+  noindex={s.preview}
+>
+  {s.preview && (
     <div class="demo-banner">
-      <strong>PROTOTYPE</strong> — sample numbers, not real donation data. Built as a proposal, not affiliated with {s.org.name}.
+      <strong>PREVIEW</strong> — a proposed page for {s.org.name}, with illustrative figures. Not yet official.
     </div>
   )}
 
   <header class="wrap masthead">
-    <div class="mark">
+    <a class="mark" href={s.org.siteUrl}>
       <span class="mark-name">{s.org.name}</span>
       <span class="mark-tag">{s.org.tagline}</span>
-    </div>
-    <a class="json-link" href="/api/state.json">Live numbers as JSON</a>
+    </a>
   </header>
-
   <hr class="rule" />
 
   <main class="wrap">
     <section class="hero">
-      <div class="hero-text">
+      <div>
         <h1>{headLead} <em>{headLast}</em></h1>
         <ul class="creed">
           {creed.map((line, i) => (
@@ -73,41 +59,18 @@ const paceLine = s.met
 
     <section class="card panel">
       <Meter s={s} />
-
-      <p class="cta-line" data-cta>{s.callToAction}</p>
-
-      <div class="actions">
-        <div class="action-main">
-          <ul class="chips">
-            {chips.map((paise) => (
-              <li>
-                <a href={s.org.donateUrl} target="_blank" rel="noopener" class={paise === s.suggestedPaise ? 'chip chip-common' : 'chip'}>
-                  {formatINR(paise)}
-                  {paise === s.suggestedPaise && <span class="chip-tag">most common</span>}
-                </a>
-              </li>
-            ))}
-          </ul>
-          <a class="btn btn-primary" href={s.org.donateUrl} target="_blank" rel="noopener">Donate now</a>
-          <p class="action-note">
-            Payments are handled by {s.org.name} on Razorpay. This page never touches your money or your details.
-          </p>
-          <p class="action-note"><a href="/thanks">Already donated? Make a card worth posting →</a></p>
-        </div>
-        <div class="qr">
-          <button class="qr-frame" set:html={qr} data-qr-open
-            aria-label={`Enlarge the QR code to donate to ${s.org.name}`}></button>
-          <span class="eyebrow">{s.org.qrCaption}</span>
-        </div>
-      </div>
+      <p class="cta-line">{s.callToAction}</p>
+      <p class={stale ? 'stamp stamp-stale' : 'stamp'}>
+        <span class="dot-mark" aria-hidden="true"></span>
+        Figure {updatedLabel(s.updatedAt)}, by {s.org.name}.
+        {stale && ' It may be behind.'}
+      </p>
     </section>
 
     <section class="stats">
-      {/* "₹0 still needed, 0 readers would close the gap" is a true but joyless
-          way to report a win, so the first two tiles change once it lands. */}
       <div class="stat card">
         <div class="eyebrow">{s.met ? 'Over goal' : 'Still needed'}</div>
-        <div class="stat-value num" data-stat="shortfall">
+        <div class="stat-value num">
           {s.met ? formatShort(s.raisedPaise - s.goalPaise) : formatShort(s.shortfallPaise)}
         </div>
         <div class="stat-note num">
@@ -115,118 +78,117 @@ const paceLine = s.met
         </div>
       </div>
       <div class="stat card">
-        <div class="eyebrow">{s.met ? 'Average gift' : `Readers at ${formatINR(s.suggestedPaise)}`}</div>
-        <div class="stat-value num" data-stat="readers">
-          {s.met ? formatINR(s.averagePaise) : formatCount(s.readersNeeded)}
-        </div>
-        <div class="stat-note">{s.met ? 'across every reader this month' : 'would close the gap'}</div>
+        <div class="eyebrow">Readers at {formatINR(s.suggestedPaise)}</div>
+        <div class="stat-value num">{formatCount(s.readersNeeded)}</div>
+        <div class="stat-note">{s.met ? 'not needed — it is funded' : 'would close the gap'}</div>
       </div>
       <div class="stat card">
-        <div class="eyebrow">Days left</div>
+        <div class="eyebrow">Days left in {s.cycle.monthName}</div>
         <div class="stat-value num">{s.cycle.daysLeft}</div>
         <div class="stat-note num">
           {s.met ? 'goal already met' : `${formatShort(s.perDayNeededPaise)} a day from here`}
         </div>
       </div>
-      <div class="stat card">
-        <div class="eyebrow">Supporters</div>
-        <div class="stat-value num" data-stat="supporters">{formatCount(s.supporters)}</div>
-        <div class="stat-note num">{formatINR(s.averagePaise)} average</div>
-      </div>
+      {s.supporters > 0 && (
+        <div class="stat card">
+          <div class="eyebrow">Supporters</div>
+          <div class="stat-value num">{formatCount(s.supporters)}</div>
+          <div class="stat-note">this month</div>
+        </div>
+      )}
     </section>
 
-    <p class="pace">{paceLine}</p>
+    <section class="give" id="give">
+      <h2>Ways to give</h2>
 
-    <section class="people">
-      <div class="people-head">
-        <h2>{formatCount(s.supporters)} readers, so far this month</h2>
-        <p>
-          {dotUnit === 1 ? 'Each dot is one of them.' : `Each dot stands for ${dotUnit} of them.`}
-          {' '}The pale one at the end is free.
-        </p>
+      <div class="card panel primary-way">
+        <div class="way-head">
+          <h3>{primary.title}</h3>
+          <p>{primary.blurb}</p>
+        </div>
+
+        <ul class="chips">
+          {chips.map((paise) => (
+            <li>
+              <a class={paise === s.suggestedPaise ? 'chip chip-common' : 'chip'}
+                 href={giveUrl(primary, paise)} target="_blank" rel="noopener">
+                {formatINR(paise)}
+                {paise === s.suggestedPaise && <span class="chip-tag">most common</span>}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <div class="way-actions">
+          <a class="btn btn-primary" href={primary.url} target="_blank" rel="noopener">{primary.cta}</a>
+          <div class="qr">
+            <button class="qr-frame" set:html={qr} data-qr-open
+              aria-label={`Enlarge the QR code for donating to ${s.org.name}`}></button>
+            <span class="eyebrow">{s.qrCaption}</span>
+          </div>
+        </div>
       </div>
-      <div class="dots" role="img" aria-label={`${formatCount(s.supporters)} readers have given this month`}>
-        {Array.from({ length: dotsGiven }, () => <i class="dot-given"></i>)}
-        <a class="dot-you" href={s.org.donateUrl} target="_blank" rel="noopener" title="Add yourself"></a>
+
+      <div class="other-ways">
+        {others.map((way) => (
+          <div class="card panel way">
+            <h3>{way.title}</h3>
+            <p>{way.blurb}</p>
+            {way.url && way.cta && (
+              <a class="btn btn-ghost" href={way.url} target="_blank" rel="noopener">{way.cta}</a>
+            )}
+          </div>
+        ))}
       </div>
+
+      <ul class="legal">
+        <li>{s.legal.eightyG}</li>
+        <li>{s.legal.fcra}</li>
+      </ul>
     </section>
 
     <section class="card share">
       <div>
-        <h2>Share this month's appeal</h2>
-        <p>The poster below redraws itself from the numbers above — no one has to remake a graphic when the total moves.</p>
+        <h2>Already given? Say so.</h2>
+        <p>A card worth posting, instead of a screenshot of a payment receipt — and it carries this month's shortfall with it.</p>
       </div>
       <div class="share-actions">
-        <a class="btn btn-primary" href="/poster">Open the poster</a>
-        <a class="btn btn-ghost" href="/poster.png" download={`${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}.png`}>Download PNG</a>
+        <a class="btn btn-primary" href="/thanks">Make a card</a>
+        <a class="btn btn-ghost" href="/poster">This month's poster</a>
       </div>
-    </section>
-
-    <section class="transparency">
-      <h2>What this number counts</h2>
-      <dl>
-        <div>
-          <dt>Online, this month</dt>
-          <dd class="num">{formatINR(s.raisedOnlinePaise)} — captured payments between 1 {s.cycle.monthName} and now, IST, net of refunds.</dd>
-        </div>
-        <div>
-          <dt>Other channels</dt>
-          <dd class="num">
-            {s.offlinePaise > 0
-              ? `${formatINR(s.offlinePaise)} entered by hand: cheques, bank transfers and anything that did not arrive through the payment page.`
-              : 'Nothing entered yet. Cheques and bank transfers are added by hand so the public total matches the books.'}
-          </dd>
-        </div>
-        <div>
-          <dt>Refreshed</dt>
-          <dd class="num" data-updated>{new Date(s.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST</dd>
-        </div>
-        <div>
-          <dt>Resets</dt>
-          <dd>Midnight IST on the 1st. Last month is archived, not overwritten.</dd>
-        </div>
-      </dl>
     </section>
   </main>
 
   <dialog id="qr-box" aria-label="Scan to donate">
     <div class="qr-big" set:html={qr}></div>
-    <p class="qr-big-caption">{s.org.qrCaption}</p>
-    <p class="qr-big-url">{s.org.donateUrl.replace(/^https?:\/\//, '')}</p>
+    <p class="qr-big-caption">{s.qrCaption}</p>
+    <p class="qr-big-url">{s.donateUrl.replace(/^https?:\/\//, '')}</p>
     <button class="btn btn-ghost" data-qr-close>Close</button>
   </dialog>
 
   <footer class="wrap">
     <hr class="rule" />
-    <p>
-      {s.campaign.note}
-      {' '}Open source — <a href="/about">how this page works</a>, and the code that produces every figure on it.
+    <p>{s.campaign.note}</p>
+    <p class="fine">
+      {s.org.name} is published by {s.org.legalName}, a Section 8 not-for-profit company
+      (CIN {s.org.cin}). Questions about giving: <a href={`mailto:${s.org.contact}`}>{s.org.contact}</a>.
     </p>
   </footer>
 
   <style>
-    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 0; flex-wrap: wrap; }
-    .mark { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
-    .mark-name { font-family: var(--serif); font-weight: 700; font-size: 1.3rem; }
+    .masthead { display: flex; align-items: center; padding: 1.25rem 0; }
+    .mark { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; text-decoration: none; }
+    .mark-name { font-family: var(--serif); font-weight: 800; font-size: 1.3rem; }
     .mark-tag { color: var(--muted); font-size: .9rem; border-left: 1px solid var(--rule); padding-left: .75rem; }
-    .json-link { font-size: .82rem; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
-    .json-link:hover { color: var(--ink); border-color: var(--ink); }
 
-    .hero {
-      display: grid; grid-template-columns: minmax(0, 1fr) auto;
-      gap: 2rem; align-items: center; padding: 3.5rem 0 2.5rem;
-    }
-    /* ch here resolves against the display size, so the measure is the one the
-       headline actually gets — three orphaned words was the old bug. */
+    .hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2rem; align-items: center; padding: 3.5rem 0 2.5rem; }
     .hero h1 { font-size: clamp(2.4rem, 7vw, 4.1rem); line-height: 1.08; font-weight: 800; max-width: 11.5em; }
     .hero h1 em { font-style: normal; color: var(--accent); }
-
     .creed { list-style: none; display: flex; flex-wrap: wrap; gap: .4rem .9rem; margin: 1.5rem 0 0; padding: 0; }
     .creed li { color: var(--muted); font-size: .95rem; }
     .creed li:not(:last-child)::after { content: '·'; margin-left: .9rem; opacity: .45; }
     .creed .creed-last { color: var(--accent); font-weight: 600; }
 
-    /* A letterpress mark, not a badge component. Slightly off-square on purpose. */
     .seal {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       width: 9.5rem; height: 9.5rem; border-radius: 50%;
@@ -236,15 +198,39 @@ const paceLine = s.met
     .seal-top, .seal-bottom { font-size: .55rem; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; white-space: nowrap; }
     .seal-big { font-family: var(--serif); font-size: 1.55rem; font-weight: 700; line-height: 1.15; margin: .12rem 0; }
     .seal-bottom { border-top: 1px solid currentColor; padding-top: .3rem; margin-top: .2rem; }
-    /* The month it lands, the mark changes colour. Worth the four lines. */
     .seal-met { border-color: var(--marigold); outline-color: var(--marigold); color: #9A6A0F; background: var(--marigold-soft); }
 
     .panel { padding: 1.75rem; }
-    .cta-line { font-family: var(--serif); font-size: clamp(1.15rem, 3.4vw, 1.5rem); font-weight: 600; margin: 1.5rem 0 0; color: var(--accent); }
+    .cta-line { font-family: var(--serif); font-size: clamp(1.15rem, 3.4vw, 1.5rem); font-weight: 700; margin: 1.5rem 0 0; color: var(--accent); }
 
-    .actions { display: flex; gap: 1.75rem; align-items: center; justify-content: space-between; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
-    .action-main { flex: 1 1 20rem; }
-    .action-note { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; max-width: 44ch; }
+    /* A hand-kept figure has to carry its own timestamp, or it is just an
+       assertion. Past a week the page says so itself. */
+    .stamp { display: flex; align-items: center; gap: .5rem; color: var(--muted); font-size: .84rem; margin: 1rem 0 0; }
+    .dot-mark { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+    .stamp-stale { color: #8A6413; }
+    .stamp-stale .dot-mark { background: var(--marigold); }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .85rem; margin-top: .85rem; }
+    .stat { padding: 1.1rem 1.2rem; }
+    .stat-value { font-family: var(--serif); font-size: 1.9rem; font-weight: 800; line-height: 1.15; margin-top: .3rem; }
+    .stat-note { color: var(--muted); font-size: .82rem; margin-top: .15rem; }
+
+    .give { margin-top: 3rem; }
+    .give h2 { font-size: 1.5rem; margin-bottom: 1rem; }
+    .way-head h3 { font-size: 1.2rem; }
+    .way-head p { color: var(--muted); font-size: .93rem; margin: .35rem 0 0; max-width: 52ch; }
+
+    .chips { list-style: none; display: flex; flex-wrap: wrap; gap: .45rem; margin: 1.25rem 0 0; padding: 0; }
+    .chip {
+      display: inline-flex; align-items: baseline; gap: .4rem; text-decoration: none;
+      padding: .45rem .8rem; border-radius: 999px; border: 1px solid var(--rule);
+      font-size: .95rem; font-variant-numeric: tabular-nums; transition: border-color .12s ease;
+    }
+    .chip:hover { border-color: var(--ink); }
+    .chip-common { border-color: var(--marigold); background: var(--marigold-soft); }
+    .chip-tag { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #8A6413; }
+
+    .way-actions { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
     .qr { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
     .qr-frame {
       width: 108px; height: 108px; padding: 6px; background: #fff;
@@ -255,50 +241,18 @@ const paceLine = s.met
     .qr-frame:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .qr-frame :global(svg) { width: 100%; height: 100%; display: block; }
 
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .85rem; margin-top: .85rem; }
-    .stat { padding: 1.1rem 1.2rem; }
-    .stat-value { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; line-height: 1.15; margin-top: .3rem; }
-    .stat-note { color: var(--muted); font-size: .82rem; margin-top: .15rem; }
+    .other-ways { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: .85rem; margin-top: .85rem; }
+    .way h3 { font-size: 1.05rem; }
+    .way p { color: var(--muted); font-size: .9rem; margin: .35rem 0 1rem; }
 
-    .pace { color: var(--muted); font-size: .92rem; margin: 1.1rem .2rem 0; }
+    .legal { list-style: none; margin: 1.5rem 0 0; padding: 0; color: var(--muted); font-size: .84rem; max-width: 62ch; }
+    .legal li + li { margin-top: .35rem; }
 
-    .chips { list-style: none; display: flex; flex-wrap: wrap; gap: .45rem; margin: 0 0 .9rem; padding: 0; }
-    .chip {
-      display: inline-flex; align-items: baseline; gap: .4rem; text-decoration: none;
-      padding: .4rem .75rem; border-radius: 999px; border: 1px solid var(--rule);
-      font-size: .92rem; font-variant-numeric: tabular-nums; transition: border-color .12s ease;
-    }
-    .chip:hover { border-color: var(--ink); }
-    .chip-common { border-color: var(--marigold); background: var(--marigold-soft); }
-    .chip-tag { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: #8A6413; }
-
-    .people { margin-top: 2.5rem; }
-    .people-head h2 { font-size: 1.3rem; }
-    .people-head p { color: var(--muted); font-size: .9rem; margin: .35rem 0 1rem; max-width: 56ch; }
-    .dots { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
-    .dots i, .dots a { width: 9px; height: 9px; border-radius: 50%; }
-    .dot-given { background: var(--marigold); }
-    .dot-you {
-      box-shadow: inset 0 0 0 1.5px var(--accent);
-      transition: transform .15s ease, background .15s ease;
-    }
-    .dot-you:hover { background: var(--accent); transform: scale(1.6); }
-
-    .share { display: flex; gap: 1.5rem; align-items: center; justify-content: space-between; padding: 1.6rem 1.75rem; margin-top: 2.5rem; flex-wrap: wrap; }
+    .share { display: flex; gap: 1.5rem; align-items: center; justify-content: space-between; padding: 1.6rem 1.75rem; margin-top: 3rem; flex-wrap: wrap; }
     .share h2 { font-size: 1.3rem; }
     .share p { color: var(--muted); margin: .4rem 0 0; max-width: 46ch; font-size: .92rem; }
     .share-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 
-    .transparency { margin: 3rem 0 2rem; }
-    .transparency h2 { font-size: 1.25rem; margin-bottom: 1rem; }
-    .transparency dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
-    .transparency dt { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
-    .transparency dd { margin: .35rem 0 0; font-size: .92rem; }
-
-    footer { padding-bottom: 3rem; }
-    footer p { margin-top: 1.25rem; max-width: 60ch; }
-
-    /* Reading a QR off a laptop with a phone is the whole point of this. */
     #qr-box {
       border: 1px solid var(--rule); border-radius: 16px; padding: 1.75rem;
       background: var(--card); color: var(--ink); text-align: center; max-width: min(92vw, 24rem);
@@ -309,20 +263,20 @@ const paceLine = s.met
     .qr-big-caption { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 1rem 0 .2rem; }
     .qr-big-url { font-size: .9rem; margin: 0 0 1.25rem; word-break: break-all; }
 
+    footer { padding-bottom: 3rem; color: var(--muted); font-size: .88rem; }
+    footer p { margin-top: 1.25rem; max-width: 60ch; }
+    .fine { font-size: .82rem; }
+
     @media (max-width: 760px) {
       .hero { grid-template-columns: 1fr; gap: 1.5rem; }
-      .seal { justify-self: end; margin-right: 1rem; }
-      .seal { width: 7.5rem; height: 7.5rem; }
+      .seal { justify-self: end; margin-right: 1rem; width: 7.5rem; height: 7.5rem; }
       .seal-big { font-size: 1.3rem; }
     }
-
     @media (max-width: 620px) {
-      /* Separators dangle at the end of a wrapped line; the gap alone is enough. */
+      .panel { padding: 1.25rem; }
       .creed { gap: .15rem 1.1rem; }
       .creed li:not(:last-child)::after { content: none; }
-
-      .panel { padding: 1.25rem; }
-      .actions { flex-direction: column-reverse; align-items: stretch; }
+      .way-actions { flex-direction: column-reverse; align-items: stretch; }
       .qr { align-self: flex-start; align-items: flex-start; }
       .btn-primary { width: 100%; }
     }
@@ -332,48 +286,8 @@ const paceLine = s.met
     const qrBox = document.getElementById('qr-box');
     document.querySelector('[data-qr-open]')?.addEventListener('click', () => qrBox.showModal());
     document.querySelector('[data-qr-close]')?.addEventListener('click', () => qrBox.close());
-    // Clicking the dimmed area closes it, the way every lightbox should.
     qrBox?.addEventListener('click', (event) => {
       if (event.target === qrBox) qrBox.close();
     });
-  </script>
-
-  <script>
-    // Poll the same read model the poster uses, so a page left open on a
-    // newsroom screen keeps up without anyone reloading it.
-    const fmt = (paise) => '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(paise / 100));
-
-    function animate(el, from, to, render) {
-      if (from === to) return;
-      const start = performance.now();
-      const step = (t) => {
-        const k = Math.min((t - start) / 700, 1);
-        const eased = 1 - Math.pow(1 - k, 3);
-        el.textContent = render(from + (to - from) * eased);
-        if (k < 1) requestAnimationFrame(step);
-      };
-      requestAnimationFrame(step);
-    }
-
-    let last = null;
-    async function tick() {
-      try {
-        const r = await fetch('/api/state.json', { cache: 'no-store' });
-        const d = await r.json();
-        const raisedEl = document.querySelector('[data-raised]');
-        if (last && d.raised.paise !== last.raised.paise) {
-          animate(raisedEl, last.raised.paise, d.raised.paise, fmt);
-          document.querySelector('[data-fill]').style.setProperty('--p', Math.min(d.percent, 100) / 100);
-          document.querySelector('[data-pct]').textContent = Math.round(d.percent) + '%';
-          document.querySelector('[data-cta]').textContent = d.callToAction;
-          document.querySelector('[data-stat="shortfall"]').textContent = fmt(d.shortfall.paise);
-          document.querySelector('[data-stat="readers"]').textContent = new Intl.NumberFormat('en-IN').format(d.readersNeeded);
-          document.querySelector('[data-stat="supporters"]').textContent = new Intl.NumberFormat('en-IN').format(d.supporters);
-        }
-        last = d;
-      } catch {}
-    }
-    tick();
-    setInterval(tick, 20000);
   </script>
 </Base>

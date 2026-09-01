@@ -1,52 +1,83 @@
-// Everything an organisation needs to change lives here or in the admin panel.
-// Fork the repo, edit this file once, and the rest of the app follows.
+// Everything on the page comes from here or from the settings screen.
+// Figures are entered by hand: Alt News collects on Razorpay, on Danamojo and
+// by cheque, so no single API knows the real total. A number someone typed
+// after looking at all three is more honest than one read off a third of them.
 
 export const DEFAULT_STATE = {
+  // While true the page carries a banner saying the figures are illustrative
+  // and asks search engines to stay away. Turn it off in Settings on the day
+  // real numbers go in.
+  preview: true,
+
   org: {
     name: 'Alt News',
     legalName: 'Pravda Media Foundation',
     tagline: 'Fact checking that matters.',
-    // The existing Razorpay page keeps taking the money. This app never touches it.
-    donateUrl: 'https://pages.razorpay.com/altnews',
-    qrCaption: 'Scan to donate',
+    cin: 'U93030GJ2017NPL099435',
     contact: 'donation@altnews.in',
+    siteUrl: 'https://www.altnews.in',
   },
+
   campaign: {
-    goalPaise: 110000000,      // ₹11,00,000
-    suggestedPaise: 50000,     // ₹500 — the "another N readers at ₹500" unit
+    goalPaise: 110000000,     // ₹11,00,000
+    raisedPaise: 50000000,    // ₹5,00,000 — typed in, not read from anywhere
+    supporters: 0,            // optional; the tile hides itself when zero
+    suggestedPaise: 50000,    // ₹500, the unit "another N readers" counts in
     headline: 'Independent journalism needs you.',
     subhead: 'No ads. No corporate money. No government money. Reader-funded.',
     note: 'We take no ads, grants or government money, so this depends entirely on you.',
+    updatedAt: null,
   },
-  // Money that arrived outside Razorpay: cheques, NEFT, foreign transfers.
-  // Without this the public number silently undercounts and contradicts the org.
-  offline: [],
-  source: {
-    mode: 'demo',              // 'demo' | 'live'
-    lastSyncedAt: null,
-    // Result of the last "test connection" press, so the panel can say
-    // something more useful than "not configured".
-    lastTest: null,
+
+  // The reason this page exists rather than a bare payment link: every route to
+  // giving on one screen, with the monthly option treated as seriously as the
+  // one-off one.
+  ways: [
+    {
+      id: 'once',
+      title: 'Give once',
+      blurb: 'Card, UPI, net banking or wallet. Add your PAN on the form to get an 80G receipt.',
+      cta: 'Donate now',
+      url: 'https://pages.razorpay.com/altnews',
+      // The long-form Razorpay URL accepts ?amount=500 and pre-fills the form.
+      prefillUrl: 'https://pages.razorpay.com/pl_FSiCHxHKfRFkrV/view/',
+      primary: true,
+    },
+    {
+      id: 'monthly',
+      title: 'Give every month',
+      blurb: '₹250, ₹500 or ₹1,000 a month. Recurring support is what makes a newsroom plannable.',
+      cta: 'Set up monthly',
+      url: 'https://pravda-media-foundation.danamojo.org/',
+      prefillUrl: null,
+      primary: false,
+    },
+    {
+      id: 'cheque',
+      title: 'Cheque or DD',
+      blurb: "Made out to 'Pravda Media Foundation', posted to 1008-1009 Satyamev Elite, Near Vakil Bridge, Opposite BRTS Bus Stop, Ambli, Ahmedabad 380058.",
+      cta: null,
+      url: null,
+      prefillUrl: null,
+      primary: false,
+    },
+  ],
+
+  // Both verified from altnews.in/donate.
+  legal: {
+    eightyG: 'Donations are exempt under 80G of the Income Tax Act. Share accurate details on the form to receive your receipt.',
+    fcra: 'Alt News is not registered under FCRA and cannot accept foreign remittance. Please give from an Indian bank account.',
   },
-  demo: {
-    // Lets you scrub to any day of the month when showing the thing to people.
-    dayOverride: null,
-    // How the month is going, as a fraction of goal a full month would reach.
-    strength: 0.82,
-    seed: 20260901,
-  },
-  history: {},
 };
 
 export const THEME = {
-  paper: '#F6F2EA',
-  card: '#FFFCF7',
+  paper: '#F4EFE5',
+  card: '#FBF7EF',
   track: '#EFE7D8',
-  ink: '#14120F',
-  muted: '#6B6459',
-  rule: '#DDD5C7',
+  ink: '#16130E',
+  muted: '#6A6153',
+  rule: '#DFD6C4',
   accent: '#C0161C',
-  // The print red goes muddy on near-black; the card uses this instead.
   accentOnDark: '#F0574B',
   marigold: '#E39A18',
   good: '#3F6B4A',

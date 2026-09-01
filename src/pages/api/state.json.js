@@ -1,39 +1,38 @@
-import { getSnapshot } from '../../lib/source.mjs';
+import { getAppeal, updatedLabel } from '../../lib/appeal.mjs';
 import { formatINR, formatShort, formatCount } from '../../lib/money.mjs';
 
 export const prerender = false;
 
-// The public read model. Anyone can poll it, embed it, or graph it — an
-// open number is the whole point.
+// The same figures the page shows, as data. Open, because a page about
+// transparency should be checkable by anyone who wants to graph it.
 export async function GET() {
-  const s = await getSnapshot();
+  const s = await getAppeal();
   return new Response(JSON.stringify({
+    org: s.org.name,
     cycle: s.cycle.label,
     cycleId: s.cycle.id,
-    mode: s.mode,
+    preview: s.preview,
     goal: { paise: s.goalPaise, display: formatINR(s.goalPaise) },
     raised: { paise: s.raisedPaise, display: formatINR(s.raisedPaise), short: formatShort(s.raisedPaise) },
-    online: s.raisedOnlinePaise,
-    offline: s.offlinePaise,
     shortfall: { paise: s.shortfallPaise, display: formatINR(s.shortfallPaise), short: formatShort(s.shortfallPaise) },
     percent: Math.round(s.percent * 10) / 10,
-    supporters: s.supporters,
-    supportersDisplay: formatCount(s.supporters),
+    supporters: s.supporters || null,
+    supportersDisplay: s.supporters ? formatCount(s.supporters) : null,
     readersNeeded: s.readersNeeded,
     suggested: s.suggestedPaise,
     daysLeft: s.cycle.daysLeft,
     dayOfCycle: s.cycle.dayOfCycle,
     totalDays: s.cycle.totalDays,
-    perDayNeeded: s.perDayNeededPaise,
-    projected: s.projectedPaise,
-    onTrack: s.onTrack,
+    met: s.met,
     callToAction: s.callToAction,
-    error: s.error,
-    generatedAt: new Date(s.generatedAt).toISOString(),
+    // Entered by hand, so say when. A figure with no timestamp is a claim.
+    updatedAt: s.updatedAt,
+    updatedLabel: updatedLabel(s.updatedAt),
+    source: 'entered by hand from Razorpay, Danamojo and directly banked gifts',
   }, null, 2), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      'cache-control': 'public, max-age=30',
+      'cache-control': 'public, max-age=60',
       'access-control-allow-origin': '*',
     },
   });

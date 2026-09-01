@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getSnapshot } from '../lib/source.mjs';
+import { getAppeal } from '../lib/appeal.mjs';
 import { cleanName } from '../lib/supporter.mjs';
 import { formatShort } from '../lib/money.mjs';
 
 export const prerender = false;
 
-const s = await getSnapshot();
+const s = await getAppeal();
 // Razorpay Payment Pages can redirect here after a successful payment, so the
 // amount may arrive in the query string. It is never trusted for any total —
 // it only decides what the card says.
@@ -16,8 +16,8 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
 <Base
   title={`Thank you — ${s.org.name}`}
   description={`${s.callToAction} Share that you chipped in.`}
-  noindex={s.mode === 'demo'}>
-  {s.mode === 'demo' && (
+  noindex={s.preview}>
+  {s.preview && (
     <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
   )}
 
