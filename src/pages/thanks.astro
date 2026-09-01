@@ -16,7 +16,7 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
 <Base
   title={`Thank you — ${s.org.name}`}
   description={`${s.callToAction} Share that you chipped in.`}
->
+  noindex={s.mode === 'demo'}>
   {s.mode === 'demo' && (
     <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
   )}

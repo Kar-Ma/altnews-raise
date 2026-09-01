@@ -36,7 +36,8 @@ const paceLine = s.met
       ? `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)} — above goal.`
       : `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)}, ${formatShort(Math.max(s.goalPaise - s.projectedPaise, 0))} under goal.`;
 ---
-<Base title={`${s.org.name} — ${s.cycle.label} appeal`} description={s.callToAction}>
+<Base title={`${s.org.name} — ${s.cycle.label} appeal`} description={s.callToAction}
+  noindex={s.mode === 'demo'}>
   {s.mode === 'demo' && (
     <div class="demo-banner">
       <strong>PROTOTYPE</strong> — sample numbers, not real donation data. Built as a proposal, not affiliated with {s.org.name}.

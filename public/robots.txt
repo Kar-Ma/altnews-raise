@@ -1,5 +1,0 @@
-# The public appeal is meant to be found. The control panel is not.
-User-agent: *
-Disallow: /admin
-Disallow: /api/admin
-Allow: /

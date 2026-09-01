@@ -18,11 +18,20 @@ export function credentials() {
 export async function getSnapshot({ force = false, nowMs = Date.now() } = {}) {
   const state = await readState();
   const cycle = currentCycle(nowMs);
+
+  // A demo deployed on a read-only filesystem has no saved settings to read,
+  // and a page sitting on day 1 of the month shows almost nothing. These let
+  // the host park it somewhere more representative.
+  const envDay = Number(process.env.DEMO_DAY);
+  const envStrength = Number(process.env.DEMO_STRENGTH);
+  const demoDay = state.demo.dayOverride ?? (Number.isFinite(envDay) && envDay > 0 ? envDay : null);
+  const demoStrength = state.demo.strength
+    ?? (Number.isFinite(envStrength) && envStrength > 0 ? envStrength : 0.82);
   const creds = credentials();
   const live = state.source.mode === 'live' && creds;
 
-  const key = [cycle.id, live ? 'live' : 'demo', state.demo.dayOverride ?? 'now',
-    state.demo.strength, state.campaign.goalPaise, state.offline.length].join(':');
+  const key = [cycle.id, live ? 'live' : 'demo', demoDay ?? 'now',
+    demoStrength, state.campaign.goalPaise, state.offline.length].join(':');
   if (!force && cached.key === key && Date.now() - cached.at < TTL_MS) {
     return { ...cached.value, cachedAt: cached.at };
   }
@@ -41,15 +50,15 @@ export async function getSnapshot({ force = false, nowMs = Date.now() } = {}) {
     total = demoCycleTotal({
       cycle,
       seed: state.demo.seed,
-      throughDay: state.demo.dayOverride,
-      targetPaise: Math.round(state.campaign.goalPaise * (state.demo.strength ?? 0.82)),
+      throughDay: demoDay,
+      targetPaise: Math.round(state.campaign.goalPaise * demoStrength),
     });
   }
 
-  const effectiveCycle = state.demo.dayOverride
-    ? { ...cycle, dayOfCycle: Math.ceil(state.demo.dayOverride),
-        daysLeft: Math.max(cycle.totalDays - Math.ceil(state.demo.dayOverride), 0),
-        fractionElapsed: state.demo.dayOverride / cycle.totalDays }
+  const effectiveCycle = demoDay
+    ? { ...cycle, dayOfCycle: Math.ceil(demoDay),
+        daysLeft: Math.max(cycle.totalDays - Math.ceil(demoDay), 0),
+        fractionElapsed: demoDay / cycle.totalDays }
     : cycle;
 
   const value = {
