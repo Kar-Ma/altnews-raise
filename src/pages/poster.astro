@@ -1,12 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getRaise } from '../lib/raise.mjs';
+import { publicUrl } from '../lib/url.mjs';
 import { formatShort } from '../lib/money.mjs';
 
 export const prerender = false;
 
 const s = await getRaise();
-const pageUrl = new URL('/', Astro.url).href;
+const pageUrl = publicUrl(Astro.request, Astro.url, '/');
 const tweet = s.met
   ? `${s.org.name} met its ${s.cycle.monthName} goal. Reader-funded journalism, funded by readers.`
   : `${s.org.name} is ${formatShort(s.shortfallPaise)} short for ${s.cycle.monthName}. ${s.callToAction}`;

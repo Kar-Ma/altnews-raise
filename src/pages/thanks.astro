@@ -3,19 +3,25 @@ import Base from '../layouts/Base.astro';
 import { getRaise } from '../lib/raise.mjs';
 import { cleanName } from '../lib/supporter.mjs';
 import { formatShort } from '../lib/money.mjs';
+import { publicUrl } from '../lib/url.mjs';
 
 export const prerender = false;
 
 const s = await getRaise();
-// Razorpay Payment Pages can redirect here after a successful payment, so the
-// amount may arrive in the query string. It is never trusted for any total —
-// it only decides what the card says.
 const name = cleanName(Astro.url.searchParams.get('name'));
-const amount = Astro.url.searchParams.get('amount') ?? '';
+
+// Razorpay's post-payment redirect carries razorpay_payment_id and a signature,
+// never the amount. Reading the amount would mean holding an API key, which is
+// the one thing this app refuses to do — and asking people to type it would put
+// an unverifiable number on a fact-checker's card. So the card says who, not
+// how much.
+const cardUrl = `/supporter.png?name=${encodeURIComponent(name)}`;
+const homeUrl = publicUrl(Astro.request, Astro.url, '/');
 ---
 <Base
   title={`Thank you — ${s.org.name}`}
   description={`${s.callToAction} Share that you chipped in.`}
+  image={cardUrl}
   noindex={s.preview}>
   {s.preview && (
     <div class="demo-banner">
@@ -37,7 +43,7 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
 
     <div class="stage">
       <div class="preview">
-        <img id="card" src={`/supporter.png?name=${encodeURIComponent(name)}`} alt="Your supporter card" width="1080" height="1080" />
+        <img id="card" src={cardUrl} alt="Your supporter card" width="1080" height="1080" />
       </div>
 
       <form class="card panel" id="form">
@@ -46,22 +52,22 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
           <input type="text" name="name" maxlength="32" value={name} placeholder="Leave blank to stay anonymous" autocomplete="name" />
         </label>
 
-        <label class="check">
-          <input type="checkbox" name="showAmount" />
-          <span>Show the amount I gave{amount ? ` (₹${amount})` : ''}</span>
-        </label>
-        <p class="hint">Off by default. Most people would rather say they gave than say how much.</p>
+        <p class="hint">Leave it blank and the card says "a reader in {s.cycle.monthName}".</p>
 
-        <input type="hidden" name="amount" value={amount} />
-
-        <div class="stack">
-          <a class="btn btn-primary" id="download" href="#" download="i-fund-independent-journalism.png">Download card</a>
-          <a class="btn btn-ghost" id="tweet" href="#" target="_blank" rel="noopener">Share on X</a>
-        </div>
+        <ol class="steps">
+          <li>
+            <a class="btn btn-primary" id="download" href={cardUrl} download="i-fund-independent-journalism.png">Download the card</a>
+          </li>
+          <li>
+            <a class="btn btn-ghost" id="tweet" href="#" target="_blank" rel="noopener">Open X, then attach it</a>
+            <span>X will not let a link add your picture for you, so attach the file you just saved.</span>
+          </li>
+        </ol>
 
         <hr class="rule" />
         <p class="hint">
-          Or just send the link: <a href="/">{new URL('/', Astro.url).host}</a> — it unfurls with this month's live total.
+          Or just send the link — <a href="/">{homeUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}</a> —
+          and it will show this month's progress on its own.
         </p>
       </form>
     </div>
@@ -83,37 +89,33 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
       border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
     }
     input[type='text']:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-    .check { flex-direction: row; align-items: center; gap: .55rem; font-weight: 500; }
     .hint { color: var(--muted); font-size: .82rem; margin: -.5rem 0 0; }
-    .stack { display: flex; flex-direction: column; gap: .5rem; margin-top: .25rem; }
-    .stack .btn { width: 100%; }
+    .steps { list-style: none; counter-reset: step; margin: .5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .9rem; }
+    .steps li { counter-increment: step; display: flex; flex-direction: column; gap: .4rem; }
+    .steps li::before {
+      content: 'Step ' counter(step);
+      font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted);
+    }
+    .steps .btn { width: 100%; }
+    .steps span { color: var(--muted); font-size: .8rem; }
 
     @media (max-width: 780px) { .stage { grid-template-columns: 1fr; } }
   </style>
 
-  <script define:vars={{ orgName: s.org.name, month: s.cycle.monthName, cta: s.callToAction }}>
+  <script define:vars={{ orgName: s.org.name, cta: s.callToAction, homeUrl }}>
     const form = document.getElementById('form');
     const card = document.getElementById('card');
     const download = document.getElementById('download');
     const tweet = document.getElementById('tweet');
 
-    function cardUrl() {
-      const data = new FormData(form);
-      const params = new URLSearchParams({ name: (data.get('name') || '').slice(0, 32) });
-      if (data.get('showAmount') && data.get('amount')) {
-        params.set('showAmount', '1');
-        params.set('amount', data.get('amount'));
-      }
-      return '/supporter.png?' + params.toString();
-    }
-
     function refresh() {
-      const url = cardUrl();
+      const name = (new FormData(form).get('name') || '').slice(0, 32);
+      const url = '/supporter.png?name=' + encodeURIComponent(name);
       card.src = url;
       download.href = url;
       const text = `I fund independent journalism. ${orgName} is reader-funded — ${cta}`;
       tweet.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) +
-        '&url=' + encodeURIComponent(location.origin + '/');
+        '&url=' + encodeURIComponent(homeUrl);
     }
 
     let timer;
@@ -123,4 +125,5 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
     });
     refresh();
   </script>
+
 </Base>

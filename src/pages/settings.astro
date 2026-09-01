@@ -4,6 +4,7 @@ import { getRaise, updatedLabel, isStale } from '../lib/raise.mjs';
 import { readState, storeIsEphemeral } from '../lib/store.mjs';
 import { toRupees, formatINR } from '../lib/money.mjs';
 import { isAuthed, usingDefaultPassword, adminLocked } from '../lib/auth.mjs';
+import { publicUrl } from '../lib/url.mjs';
 
 export const prerender = false;
 
@@ -13,7 +14,7 @@ const state = await readState();
 const s = authed ? await getRaise() : null;
 const locked = adminLocked();
 const ephemeral = storeIsEphemeral();
-const thanksUrl = new URL('/thanks', Astro.url).href;
+const thanksUrl = publicUrl(Astro.request, Astro.url, '/thanks');
 ---
 <Base title="Settings — Alt News Raise" description="Private settings page." noindex={true}>
   <main class="wrap">
@@ -272,8 +273,9 @@ const thanksUrl = new URL('/thanks', Astro.url).href;
     .fields .span2, .fields .big { grid-column: 1 / -1; }
     .save-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
     .stamp { font-size: .82rem; color: var(--muted); }
-    .check { flex-direction: row; align-items: center; gap: .55rem; font-weight: 500; color: var(--ink); }
-    .publish { display: flex; align-items: center; gap: 1rem; margin-top: 1rem; }
+    .check { flex-direction: row; align-items: center; gap: .55rem; font-weight: 500; color: var(--ink); white-space: nowrap; }
+    .check input { width: auto; flex-shrink: 0; margin: 0; }
+    .publish { display: flex; align-items: center; gap: 1.25rem; margin-top: 1rem; flex-wrap: wrap; }
 
     .way-form { border-top: 1px solid var(--rule); margin-top: 1.1rem; padding-top: .3rem; }
     .guide-steps { margin: 1rem 0; padding-left: 1.3rem; font-size: .9rem; }
