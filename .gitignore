@@ -7,3 +7,6 @@ data/state.json
 .vercel/
 .vercel
 .env*
+
+# Private working notes, not for the public repo
+NOTES.local.md
