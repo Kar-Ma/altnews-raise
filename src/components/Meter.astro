@@ -1,0 +1,45 @@
+---
+import { formatINR, formatShort, formatCount } from '../lib/money.mjs';
+const { s } = Astro.props;
+const expectedPct = Math.min((s.expectedByNowPaise / s.goalPaise) * 100, 100);
+---
+<div class="meter">
+  <div class="meter-head">
+    <div>
+      <div class="eyebrow">Raised in {s.cycle.label}</div>
+      <div class="raised num" data-raised>{formatINR(s.raisedPaise)}</div>
+    </div>
+    <div class="goal">
+      <div class="eyebrow">Goal</div>
+      <div class="goal-value num">{formatINR(s.goalPaise)}</div>
+    </div>
+  </div>
+
+  <div class="track" role="img" aria-label={`${Math.round(s.percent)} percent of the ${formatShort(s.goalPaise)} goal raised`}>
+    <div class="fill" data-fill style={`width:${s.percentClamped}%`}></div>
+    {expectedPct > 2 && expectedPct < 99 && (
+      <div class="pace-tick" style={`left:${expectedPct}%`} title="Where a steady month would be by now"></div>
+    )}
+  </div>
+
+  <div class="meter-foot">
+    <span class="pct num" data-pct>{Math.round(s.percent)}%</span>
+    <span class="dot">·</span>
+    <span class="num">{formatCount(s.supporters)} supporters</span>
+    <span class="dot">·</span>
+    <span class="num">day {s.cycle.dayOfCycle} of {s.cycle.totalDays}</span>
+  </div>
+</div>
+
+<style>
+  .meter-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: .9rem; }
+  .raised { font-family: var(--serif); font-size: clamp(2.4rem, 8vw, 3.6rem); line-height: 1; font-weight: 700; letter-spacing: -0.02em; }
+  .goal { text-align: right; }
+  .goal-value { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; color: var(--muted); }
+  .track { position: relative; height: 20px; background: #EFE7D8; border-radius: 999px; overflow: hidden; border: 1px solid var(--rule); }
+  .fill { height: 100%; background: linear-gradient(90deg, #C0161C, #E0483A); border-radius: 999px; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+  .pace-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .35; }
+  .meter-foot { display: flex; flex-wrap: wrap; gap: .5rem; align-items: baseline; margin-top: .7rem; font-size: .92rem; color: var(--muted); }
+  .pct { font-weight: 700; color: var(--ink); }
+  .dot { opacity: .45; }
+</style>

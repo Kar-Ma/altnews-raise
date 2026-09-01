@@ -1,0 +1,97 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSnapshot } from '../lib/source.mjs';
+import { formatShort } from '../lib/money.mjs';
+
+export const prerender = false;
+
+const s = await getSnapshot();
+const pageUrl = new URL('/', Astro.url).href;
+const tweet = s.met
+  ? `${s.org.name} met its ${s.cycle.monthName} goal. Reader-funded journalism, funded by readers.`
+  : `${s.org.name} is ${formatShort(s.shortfallPaise)} short for ${s.cycle.monthName}. ${s.callToAction}`;
+const shareHref = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}&url=${encodeURIComponent(pageUrl)}`;
+const fileName = `${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}.png`;
+---
+<Base title={`${s.org.name} — ${s.cycle.label} poster`} description={s.callToAction}>
+  {s.mode === 'demo' && (
+    <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
+  )}
+
+  <main class="wrap">
+    <nav><a href="/">← Back to the meter</a></nav>
+
+    <header class="head">
+      <h1>This month's poster</h1>
+      <p>Drawn from the live numbers every time it loads. Nobody edits a template, and it cannot fall out of date with the page.</p>
+    </header>
+
+    <div class="stage">
+      <figure>
+        <img src="/poster.png" alt={`${s.org.name} ${s.cycle.label} appeal: ${s.callToAction}`} width="1080" height="1350" />
+        <figcaption>1080 × 1350 — Instagram, WhatsApp status, X</figcaption>
+      </figure>
+
+      <aside>
+        <div class="card box">
+          <h2>Use it</h2>
+          <div class="stack">
+            <a class="btn btn-primary" href="/poster.png" download={fileName}>Download PNG</a>
+            <a class="btn btn-ghost" href={shareHref} target="_blank" rel="noopener">Share on X</a>
+            <button class="btn btn-ghost" data-copy={pageUrl}>Copy page link</button>
+          </div>
+          <p class="hint">The link unfurls with its own live preview card, so posting the URL alone already shows the current total.</p>
+        </div>
+
+        <div class="card box">
+          <h2>Other sizes</h2>
+          <ul class="links">
+            <li><a href="/og.png">1200 × 630 — link preview / X card</a></li>
+            <li><a href="/poster.png">1080 × 1350 — feed post</a></li>
+          </ul>
+          <p class="hint">Both redraw from the same numbers as the page. The poster is a real endpoint, so it can be pulled into a scheduler or a newsletter.</p>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <style>
+    main { padding-bottom: 4rem; }
+    nav { padding: 1.25rem 0; font-size: .9rem; }
+    nav a { color: var(--muted); text-decoration: none; }
+    nav a:hover { color: var(--ink); }
+    .head { max-width: 46ch; margin-bottom: 2rem; }
+    .head h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); }
+    .head p { color: var(--muted); margin-top: .6rem; }
+
+    .stage { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(16rem, .9fr); gap: 1.75rem; align-items: start; }
+    figure { margin: 0; }
+    figure img { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 12px; box-shadow: var(--shadow); }
+    figcaption { color: var(--muted); font-size: .82rem; margin-top: .6rem; }
+
+    aside { display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 1.5rem; }
+    .box { padding: 1.25rem; }
+    .box h2 { font-size: 1.05rem; margin-bottom: .85rem; }
+    .stack { display: flex; flex-direction: column; gap: .5rem; }
+    .stack .btn { width: 100%; }
+    .hint { color: var(--muted); font-size: .82rem; margin: .9rem 0 0; }
+    .links { margin: 0; padding-left: 1.1rem; font-size: .9rem; }
+    .links li + li { margin-top: .35rem; }
+
+    @media (max-width: 780px) {
+      .stage { grid-template-columns: 1fr; }
+      aside { position: static; }
+    }
+  </style>
+
+  <script>
+    document.querySelectorAll('[data-copy]').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(btn.dataset.copy);
+        const original = btn.textContent;
+        btn.textContent = 'Copied';
+        setTimeout(() => { btn.textContent = original; }, 1600);
+      });
+    });
+  </script>
+</Base>

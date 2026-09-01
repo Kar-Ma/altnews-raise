@@ -1,0 +1,227 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSnapshot, credentials } from '../lib/source.mjs';
+import { readState } from '../lib/store.mjs';
+import { toRupees, formatINR } from '../lib/money.mjs';
+import { isAuthed, usingDefaultPassword } from '../lib/auth.mjs';
+
+export const prerender = false;
+
+const authed = isAuthed(Astro.cookies);
+const note = Astro.url.searchParams.get('note');
+const state = await readState();
+const s = authed ? await getSnapshot() : null;
+const hasCreds = Boolean(credentials());
+---
+<Base title="Admin — Tally" description="Set the monthly goal and record contributions that arrived outside Razorpay.">
+  <main class="wrap">
+    <header class="head">
+      <div class="eyebrow">Admin</div>
+      <h1>{state.org.name} — this month</h1>
+    </header>
+
+    {note && <p class="note">{note}</p>}
+
+    {!authed ? (
+      <form class="card panel narrow" method="post" action="/api/admin">
+        <input type="hidden" name="action" value="login" />
+        <label>
+          <span>Password</span>
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+        {usingDefaultPassword() && (
+          <p class="warn">No <code>ADMIN_PASSWORD</code> is set, so the password is <code>letmein</code>. Set one before this is reachable from the internet.</p>
+        )}
+      </form>
+    ) : (
+      <div class="grid">
+        <section class="card panel">
+          <h2>Where the month stands</h2>
+          <dl class="readout">
+            <div><dt>Online</dt><dd class="num">{formatINR(s.raisedOnlinePaise)}</dd></div>
+            <div><dt>Offline</dt><dd class="num">{formatINR(s.offlinePaise)}</dd></div>
+            <div><dt>Total</dt><dd class="num strong">{formatINR(s.raisedPaise)}</dd></div>
+            <div><dt>Goal</dt><dd class="num">{formatINR(s.goalPaise)}</dd></div>
+            <div><dt>Percent</dt><dd class="num">{Math.round(s.percent)}%</dd></div>
+            <div><dt>Supporters</dt><dd class="num">{s.supporters}</dd></div>
+          </dl>
+          {s.error && <p class="warn">Razorpay error: {s.error}. The public page is showing zero online rather than a guess.</p>}
+        </section>
+
+        <section class="card panel">
+          <h2>Data source</h2>
+          <p class="hint">
+            {hasCreds
+              ? 'Razorpay credentials are present in the environment.'
+              : 'No RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET in the environment, so live mode has nothing to read.'}
+          </p>
+          <form method="post" action="/api/admin" class="row">
+            <input type="hidden" name="action" value="source" />
+            <select name="mode">
+              <option value="demo" selected={state.source.mode !== 'live'}>Demo — generated numbers</option>
+              <option value="live" selected={state.source.mode === 'live'} disabled={!hasCreds}>Live — Razorpay</option>
+            </select>
+            <button class="btn btn-ghost" type="submit">Switch</button>
+          </form>
+
+          {state.source.mode !== 'live' && (
+            <form method="post" action="/api/admin" class="row spaced">
+              <input type="hidden" name="action" value="demo-day" />
+              <label class="inline">
+                <span>Pretend it is day</span>
+                <input class="tiny" type="number" name="day" min="0" max="31" step="0.5" value={state.demo.dayOverride ?? ''} placeholder="now" />
+              </label>
+              <button class="btn btn-ghost" type="submit">Set</button>
+            </form>
+          )}
+        </section>
+
+        <section class="card panel wide">
+          <h2>Campaign</h2>
+          <form method="post" action="/api/admin" class="fields">
+            <input type="hidden" name="action" value="campaign" />
+            <label class="span2">
+              <span>Headline</span>
+              <input type="text" name="headline" value={state.campaign.headline} maxlength="120" />
+            </label>
+            <label class="span2">
+              <span>Sub-lines — one sentence each, the last one is highlighted</span>
+              <input type="text" name="subhead" value={state.campaign.subhead} maxlength="300" />
+            </label>
+            <label>
+              <span>Monthly goal (₹)</span>
+              <input class="num" type="number" name="goal" min="1" step="1" value={toRupees(state.campaign.goalPaise)} required />
+            </label>
+            <label>
+              <span>Suggested donation (₹)</span>
+              <input class="num" type="number" name="suggested" min="1" step="1" value={toRupees(state.campaign.suggestedPaise)} required />
+            </label>
+            <label>
+              <span>Organisation</span>
+              <input type="text" name="orgName" value={state.org.name} maxlength="60" />
+            </label>
+            <label>
+              <span>Tagline</span>
+              <input type="text" name="tagline" value={state.org.tagline} maxlength="120" />
+            </label>
+            <label class="span2">
+              <span>Donate link — where the button and the QR point</span>
+              <input type="url" name="donateUrl" value={state.org.donateUrl} maxlength="300" />
+            </label>
+            <label class="span2">
+              <span>Footer note</span>
+              <input type="text" name="note" value={state.campaign.note} maxlength="300" />
+            </label>
+            <div class="span2"><button class="btn btn-primary" type="submit">Save campaign</button></div>
+          </form>
+          <p class="hint">The goal can move mid-month. The poster and the page both pick up the new figure on their next load.</p>
+        </section>
+
+        <section class="card panel wide">
+          <h2>Contributions that did not come through Razorpay</h2>
+          <p class="hint">
+            Cheques, NEFT, anything banked directly. Without these the public total quietly undercounts and
+            contradicts whatever the org says elsewhere — which is the one thing a transparency page cannot afford.
+          </p>
+
+          <form method="post" action="/api/admin" class="fields">
+            <input type="hidden" name="action" value="offline-add" />
+            <label class="grow">
+              <span>What it was</span>
+              <input type="text" name="label" placeholder="Cheques banked, week 2" maxlength="80" />
+            </label>
+            <label>
+              <span>Amount (₹)</span>
+              <input class="num" type="number" name="amount" min="1" step="1" required />
+            </label>
+            <label>
+              <span>Date</span>
+              <input type="date" name="date" />
+            </label>
+            <div><button class="btn btn-primary" type="submit">Add</button></div>
+          </form>
+
+          {state.offline.length > 0 && (
+            <table>
+              <thead><tr><th>Entry</th><th>Date</th><th class="right">Amount</th><th></th></tr></thead>
+              <tbody>
+                {state.offline.map((entry) => (
+                  <tr>
+                    <td>{entry.label}</td>
+                    <td class="num muted">{entry.dateISO || '—'}</td>
+                    <td class="num right">{formatINR(entry.amountPaise)}</td>
+                    <td class="right">
+                      <form method="post" action="/api/admin">
+                        <input type="hidden" name="action" value="offline-remove" />
+                        <input type="hidden" name="id" value={entry.id} />
+                        <button class="link-btn" type="submit">Remove</button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </section>
+
+        <div class="wide actions">
+          <a class="btn btn-ghost" href="/">View the public page</a>
+          <form method="post" action="/api/admin">
+            <input type="hidden" name="action" value="logout" />
+            <button class="btn btn-ghost" type="submit">Sign out</button>
+          </form>
+        </div>
+      </div>
+    )}
+  </main>
+
+  <style>
+    main { padding-bottom: 4rem; }
+    .head { padding: 2rem 0 1.5rem; }
+    .head h1 { font-size: clamp(1.7rem, 4.5vw, 2.3rem); margin-top: .4rem; }
+    .note { background: var(--accent-soft); border: 1px solid #F0CFCF; color: #8A1015; padding: .7rem 1rem; border-radius: 9px; font-size: .9rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .wide { grid-column: 1 / -1; }
+    .panel { padding: 1.4rem; }
+    .narrow { max-width: 24rem; display: flex; flex-direction: column; gap: .9rem; }
+    h2 { font-size: 1.1rem; margin-bottom: .9rem; }
+
+    label { display: flex; flex-direction: column; gap: .35rem; font-size: .78rem; font-weight: 600; color: var(--muted); }
+    label.inline { flex-direction: row; align-items: center; gap: .5rem; }
+    input, select {
+      font: inherit; font-size: .95rem; font-weight: 400; padding: .6rem .7rem; border-radius: 8px;
+      border: 1px solid var(--rule); background: var(--paper); color: var(--ink); width: 100%;
+    }
+    input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    input.tiny { width: 5.5rem; }
+    input.num { font-variant-numeric: tabular-nums; }
+
+    .fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; align-items: end; }
+    .fields .span2 { grid-column: 1 / -1; }
+    .fields .grow { grid-column: span 1; }
+    .row { display: flex; gap: .5rem; align-items: center; }
+    .row.spaced { margin-top: .9rem; }
+
+    .readout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .7rem 1rem; margin: 0; }
+    .readout dt { font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .readout dd { margin: .15rem 0 0; font-size: 1.05rem; }
+    .readout .strong { font-weight: 700; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 1.2rem; font-size: .9rem; }
+    th { text-align: left; font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); padding-bottom: .5rem; border-bottom: 1px solid var(--rule); }
+    td { padding: .6rem 0; border-bottom: 1px solid var(--rule); }
+    .right { text-align: right; }
+    .muted { color: var(--muted); }
+    .link-btn { background: none; border: 0; color: var(--accent); font: inherit; font-size: .85rem; cursor: pointer; padding: 0; }
+
+    .hint { color: var(--muted); font-size: .82rem; margin: .8rem 0 0; max-width: 62ch; }
+    .warn { color: #8A1015; font-size: .82rem; margin: .6rem 0 0; }
+    .actions { display: flex; gap: .5rem; }
+
+    @media (max-width: 760px) {
+      .grid, .fields, .readout { grid-template-columns: 1fr; }
+    }
+  </style>
+</Base>

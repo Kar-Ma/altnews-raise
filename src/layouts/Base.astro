@@ -1,0 +1,87 @@
+---
+const { title, description = 'A live monthly fundraising meter for reader-funded newsrooms.', image = '/og.png' } = Astro.props;
+const canonical = Astro.url.href;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(image, Astro.url).href} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lora:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style is:global>
+      :root {
+        --paper: #F6F2EA;
+        --card: #FFFCF7;
+        --ink: #14120F;
+        --muted: #6B6459;
+        --rule: #E2DACB;
+        --accent: #C0161C;
+        --accent-soft: #FBECEC;
+        --good: #3F6B4A;
+        --serif: 'Lora', Georgia, 'Times New Roman', serif;
+        --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        --shadow: 0 1px 2px rgba(20,18,15,.05), 0 12px 32px -18px rgba(20,18,15,.28);
+        --radius: 14px;
+      }
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.55;
+        font-feature-settings: 'tnum' 0;
+        -webkit-font-smoothing: antialiased;
+      }
+      h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+      a { color: inherit; }
+      .wrap { width: min(100% - 2.5rem, 62rem); margin-inline: auto; }
+      .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+      .rule { border: 0; border-top: 1px solid var(--rule); margin: 0; }
+      .eyebrow {
+        font-size: .72rem; font-weight: 700; letter-spacing: .12em;
+        text-transform: uppercase; color: var(--muted);
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+      .btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+        padding: .85rem 1.4rem; border-radius: 10px; border: 1px solid transparent;
+        font-weight: 600; font-size: 1rem; text-decoration: none; cursor: pointer;
+        transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary { background: var(--accent); color: #fff; }
+      .btn-primary:hover { background: #a71217; }
+      .btn-ghost { background: transparent; color: var(--ink); border-color: var(--rule); }
+      .btn-ghost:hover { border-color: var(--ink); }
+      .demo-banner {
+        background: #14120F; color: #F6F2EA; font-size: .82rem;
+        padding: .55rem 0; text-align: center; letter-spacing: .01em;
+      }
+      .demo-banner strong { color: #F0C868; }
+      footer { color: var(--muted); font-size: .85rem; }
+      @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,223 @@
+---
+import Base from '../layouts/Base.astro';
+import Meter from '../components/Meter.astro';
+import { getSnapshot } from '../lib/source.mjs';
+import { formatINR, formatShort, formatCount } from '../lib/money.mjs';
+import { qrSvg } from '../lib/qr.mjs';
+
+export const prerender = false;
+
+const s = await getSnapshot();
+const qr = await qrSvg(s.org.donateUrl);
+const paceLine = s.met
+  ? `Goal met with ${s.cycle.daysLeft} days to spare.`
+  : s.projectedPaise === null
+    ? 'Too early in the month to project a finish.'
+    : s.onTrack
+      ? `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)} — above goal.`
+      : `At this pace ${s.cycle.monthName} finishes around ${formatShort(s.projectedPaise)}, ${formatShort(Math.max(s.goalPaise - s.projectedPaise, 0))} under goal.`;
+---
+<Base title={`${s.org.name} — ${s.cycle.label} appeal`} description={s.callToAction}>
+  {s.mode === 'demo' && (
+    <div class="demo-banner">
+      <strong>PROTOTYPE</strong> — sample numbers, not real donation data. Built as a proposal, not affiliated with {s.org.name}.
+    </div>
+  )}
+
+  <header class="wrap masthead">
+    <div class="mark">
+      <span class="mark-name">{s.org.name}</span>
+      <span class="mark-tag">{s.org.tagline}</span>
+    </div>
+    <a class="json-link" href="/api/state.json">Live numbers as JSON</a>
+  </header>
+
+  <hr class="rule" />
+
+  <main class="wrap">
+    <section class="hero">
+      <h1>{s.campaign.headline}</h1>
+      <p class="subhead">{s.campaign.subhead.split('.').filter(Boolean).map((line) => (<span>{line.trim()}.</span>))}</p>
+    </section>
+
+    <section class="card panel">
+      <Meter s={s} />
+
+      <p class="cta-line" data-cta>{s.callToAction}</p>
+
+      <div class="actions">
+        <div class="action-main">
+          <a class="btn btn-primary" href={s.org.donateUrl} target="_blank" rel="noopener">Donate now</a>
+          <p class="action-note">
+            Payments are handled by {s.org.name} on Razorpay. This page never touches your money or your details.
+          </p>
+          <p class="action-note"><a href="/thanks">Already donated? Make a card worth posting →</a></p>
+        </div>
+        <div class="qr">
+          <div class="qr-frame" set:html={qr}></div>
+          <span class="eyebrow">{s.org.qrCaption}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat card">
+        <div class="eyebrow">Still needed</div>
+        <div class="stat-value num" data-stat="shortfall">{formatShort(s.shortfallPaise)}</div>
+        <div class="stat-note num">{formatINR(s.shortfallPaise)}</div>
+      </div>
+      <div class="stat card">
+        <div class="eyebrow">Readers at {formatINR(s.suggestedPaise)}</div>
+        <div class="stat-value num" data-stat="readers">{formatCount(s.readersNeeded)}</div>
+        <div class="stat-note">would close the gap</div>
+      </div>
+      <div class="stat card">
+        <div class="eyebrow">Days left</div>
+        <div class="stat-value num">{s.cycle.daysLeft}</div>
+        <div class="stat-note num">{formatShort(s.perDayNeededPaise)} a day from here</div>
+      </div>
+      <div class="stat card">
+        <div class="eyebrow">Supporters</div>
+        <div class="stat-value num" data-stat="supporters">{formatCount(s.supporters)}</div>
+        <div class="stat-note num">{formatINR(s.averagePaise)} average</div>
+      </div>
+    </section>
+
+    <p class="pace">{paceLine}</p>
+
+    <section class="card share">
+      <div>
+        <h2>Share this month's appeal</h2>
+        <p>The poster below redraws itself from the numbers above — no one has to remake a graphic when the total moves.</p>
+      </div>
+      <div class="share-actions">
+        <a class="btn btn-primary" href="/poster">Open the poster</a>
+        <a class="btn btn-ghost" href="/poster.png" download={`${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}.png`}>Download PNG</a>
+      </div>
+    </section>
+
+    <section class="transparency">
+      <h2>What this number counts</h2>
+      <dl>
+        <div>
+          <dt>Online, this month</dt>
+          <dd class="num">{formatINR(s.raisedOnlinePaise)} — captured payments between 1 {s.cycle.monthName} and now, IST, net of refunds.</dd>
+        </div>
+        <div>
+          <dt>Other channels</dt>
+          <dd class="num">
+            {s.offlinePaise > 0
+              ? `${formatINR(s.offlinePaise)} entered by hand: cheques, bank transfers and anything that did not arrive through the payment page.`
+              : 'Nothing entered yet. Cheques and bank transfers are added by hand so the public total matches the books.'}
+          </dd>
+        </div>
+        <div>
+          <dt>Refreshed</dt>
+          <dd class="num" data-updated>{new Date(s.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST</dd>
+        </div>
+        <div>
+          <dt>Resets</dt>
+          <dd>Midnight IST on the 1st. Last month is archived, not overwritten.</dd>
+        </div>
+      </dl>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <hr class="rule" />
+    <p>
+      {s.campaign.note}
+      {' '}Open source — <a href="https://github.com/">read the code</a> that produces every figure on this page.
+    </p>
+  </footer>
+
+  <style>
+    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem 0; flex-wrap: wrap; }
+    .mark { display: flex; align-items: baseline; gap: .75rem; flex-wrap: wrap; }
+    .mark-name { font-family: var(--serif); font-weight: 700; font-size: 1.3rem; }
+    .mark-tag { color: var(--muted); font-size: .9rem; border-left: 1px solid var(--rule); padding-left: .75rem; }
+    .json-link { font-size: .82rem; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--rule); }
+    .json-link:hover { color: var(--ink); border-color: var(--ink); }
+
+    .hero { padding: 3rem 0 2rem; max-width: 34ch; }
+    .hero h1 { font-size: clamp(2.6rem, 9vw, 4.4rem); line-height: 1.02; font-weight: 700; }
+    .subhead { color: var(--muted); font-size: 1.02rem; margin: 1.25rem 0 0; display: flex; flex-direction: column; }
+
+    .panel { padding: 1.75rem; }
+    .cta-line { font-family: var(--serif); font-size: clamp(1.15rem, 3.4vw, 1.5rem); font-weight: 600; margin: 1.5rem 0 0; color: var(--accent); }
+
+    .actions { display: flex; gap: 1.75rem; align-items: center; justify-content: space-between; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); flex-wrap: wrap; }
+    .action-main { flex: 1 1 20rem; }
+    .action-note { color: var(--muted); font-size: .85rem; margin: .75rem 0 0; max-width: 44ch; }
+    .qr { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+    .qr-frame { width: 108px; height: 108px; padding: 6px; background: #fff; border: 1px solid var(--rule); border-radius: 8px; }
+    .qr-frame :global(svg) { width: 100%; height: 100%; display: block; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: .85rem; margin-top: .85rem; }
+    .stat { padding: 1.1rem 1.2rem; }
+    .stat-value { font-family: var(--serif); font-size: 1.9rem; font-weight: 700; line-height: 1.15; margin-top: .3rem; }
+    .stat-note { color: var(--muted); font-size: .82rem; margin-top: .15rem; }
+
+    .pace { color: var(--muted); font-size: .92rem; margin: 1.1rem .2rem 0; }
+
+    .share { display: flex; gap: 1.5rem; align-items: center; justify-content: space-between; padding: 1.6rem 1.75rem; margin-top: 2.5rem; flex-wrap: wrap; }
+    .share h2 { font-size: 1.3rem; }
+    .share p { color: var(--muted); margin: .4rem 0 0; max-width: 46ch; font-size: .92rem; }
+    .share-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+    .transparency { margin: 3rem 0 2rem; }
+    .transparency h2 { font-size: 1.25rem; margin-bottom: 1rem; }
+    .transparency dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.25rem 2rem; margin: 0; }
+    .transparency dt { font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .transparency dd { margin: .35rem 0 0; font-size: .92rem; }
+
+    footer { padding-bottom: 3rem; }
+    footer p { margin-top: 1.25rem; max-width: 60ch; }
+
+    @media (max-width: 620px) {
+      .panel { padding: 1.25rem; }
+      .actions { flex-direction: column-reverse; align-items: stretch; }
+      .qr { align-self: flex-start; align-items: flex-start; }
+      .btn-primary { width: 100%; }
+    }
+  </style>
+
+  <script>
+    // Poll the same read model the poster uses, so a page left open on a
+    // newsroom screen keeps up without anyone reloading it.
+    const fmt = (paise) => '₹' + new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Math.round(paise / 100));
+
+    function animate(el, from, to, render) {
+      if (from === to) return;
+      const start = performance.now();
+      const step = (t) => {
+        const k = Math.min((t - start) / 700, 1);
+        const eased = 1 - Math.pow(1 - k, 3);
+        el.textContent = render(from + (to - from) * eased);
+        if (k < 1) requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    }
+
+    let last = null;
+    async function tick() {
+      try {
+        const r = await fetch('/api/state.json', { cache: 'no-store' });
+        const d = await r.json();
+        const raisedEl = document.querySelector('[data-raised]');
+        if (last && d.raised.paise !== last.raised.paise) {
+          animate(raisedEl, last.raised.paise, d.raised.paise, fmt);
+          document.querySelector('[data-fill]').style.width = Math.min(d.percent, 100) + '%';
+          document.querySelector('[data-pct]').textContent = Math.round(d.percent) + '%';
+          document.querySelector('[data-cta]').textContent = d.callToAction;
+          document.querySelector('[data-stat="shortfall"]').textContent = fmt(d.shortfall.paise);
+          document.querySelector('[data-stat="readers"]').textContent = new Intl.NumberFormat('en-IN').format(d.readersNeeded);
+          document.querySelector('[data-stat="supporters"]').textContent = new Intl.NumberFormat('en-IN').format(d.supporters);
+        }
+        last = d;
+      } catch {}
+    }
+    tick();
+    setInterval(tick, 20000);
+  </script>
+</Base>

@@ -1,0 +1,124 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSnapshot } from '../lib/source.mjs';
+import { cleanName } from '../lib/supporter.mjs';
+import { formatShort } from '../lib/money.mjs';
+
+export const prerender = false;
+
+const s = await getSnapshot();
+// Razorpay Payment Pages can redirect here after a successful payment, so the
+// amount may arrive in the query string. It is never trusted for any total —
+// it only decides what the card says.
+const name = cleanName(Astro.url.searchParams.get('name'));
+const amount = Astro.url.searchParams.get('amount') ?? '';
+---
+<Base
+  title={`Thank you — ${s.org.name}`}
+  description={`${s.callToAction} Share that you chipped in.`}
+>
+  {s.mode === 'demo' && (
+    <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
+  )}
+
+  <main class="wrap">
+    <header class="head">
+      <div class="eyebrow">Thank you</div>
+      <h1>That's one more reader funding the work.</h1>
+      <p>
+        {s.met
+          ? `${s.cycle.monthName} is funded.`
+          : `${s.cycle.monthName} is at ${Math.round(s.percent)}% — ${formatShort(s.shortfallPaise)} to go.`}
+        {' '}A share does more than the donation on its own. Here's something better to post than a payment screenshot.
+      </p>
+    </header>
+
+    <div class="stage">
+      <div class="preview">
+        <img id="card" src={`/supporter.png?name=${encodeURIComponent(name)}`} alt="Your supporter card" width="1080" height="1080" />
+      </div>
+
+      <form class="card panel" id="form">
+        <label>
+          <span>Name on the card</span>
+          <input type="text" name="name" maxlength="32" value={name} placeholder="Leave blank to stay anonymous" autocomplete="name" />
+        </label>
+
+        <label class="check">
+          <input type="checkbox" name="showAmount" />
+          <span>Show the amount I gave{amount ? ` (₹${amount})` : ''}</span>
+        </label>
+        <p class="hint">Off by default. Most people would rather say they gave than say how much.</p>
+
+        <input type="hidden" name="amount" value={amount} />
+
+        <div class="stack">
+          <a class="btn btn-primary" id="download" href="#" download="i-fund-independent-journalism.png">Download card</a>
+          <a class="btn btn-ghost" id="tweet" href="#" target="_blank" rel="noopener">Share on X</a>
+        </div>
+
+        <hr class="rule" />
+        <p class="hint">
+          Or just send the link: <a href="/">{new URL('/', Astro.url).host}</a> — it unfurls with this month's live total.
+        </p>
+      </form>
+    </div>
+  </main>
+
+  <style>
+    main { padding-bottom: 4rem; }
+    .head { max-width: 48ch; padding: 2.5rem 0 2rem; }
+    .head h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.08; margin-top: .5rem; }
+    .head p { color: var(--muted); margin-top: 1rem; }
+
+    .stage { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(17rem, .85fr); gap: 1.75rem; align-items: start; }
+    .preview img { width: 100%; height: auto; display: block; border-radius: 12px; box-shadow: var(--shadow); }
+
+    .panel { padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    label { display: flex; flex-direction: column; gap: .4rem; font-size: .85rem; font-weight: 600; }
+    input[type='text'] {
+      font: inherit; font-weight: 400; padding: .7rem .8rem; border-radius: 9px;
+      border: 1px solid var(--rule); background: var(--paper); color: var(--ink);
+    }
+    input[type='text']:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    .check { flex-direction: row; align-items: center; gap: .55rem; font-weight: 500; }
+    .hint { color: var(--muted); font-size: .82rem; margin: -.5rem 0 0; }
+    .stack { display: flex; flex-direction: column; gap: .5rem; margin-top: .25rem; }
+    .stack .btn { width: 100%; }
+
+    @media (max-width: 780px) { .stage { grid-template-columns: 1fr; } }
+  </style>
+
+  <script define:vars={{ orgName: s.org.name, month: s.cycle.monthName, cta: s.callToAction }}>
+    const form = document.getElementById('form');
+    const card = document.getElementById('card');
+    const download = document.getElementById('download');
+    const tweet = document.getElementById('tweet');
+
+    function cardUrl() {
+      const data = new FormData(form);
+      const params = new URLSearchParams({ name: (data.get('name') || '').slice(0, 32) });
+      if (data.get('showAmount') && data.get('amount')) {
+        params.set('showAmount', '1');
+        params.set('amount', data.get('amount'));
+      }
+      return '/supporter.png?' + params.toString();
+    }
+
+    function refresh() {
+      const url = cardUrl();
+      card.src = url;
+      download.href = url;
+      const text = `I fund independent journalism. ${orgName} is reader-funded — ${cta}`;
+      tweet.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) +
+        '&url=' + encodeURIComponent(location.origin + '/');
+    }
+
+    let timer;
+    form.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(refresh, 350);
+    });
+    refresh();
+  </script>
+</Base>
