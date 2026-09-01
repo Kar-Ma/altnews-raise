@@ -10,7 +10,7 @@ export const adminPassword = () => process.env.ADMIN_PASSWORD || 'letmein';
 
 const token = () =>
   createHash('sha256')
-    .update(adminPassword() + (process.env.SESSION_SALT || 'tally'))
+    .update(adminPassword() + (process.env.SESSION_SALT || 'open-appeal'))
     .digest('hex');
 
 export function isAuthed(cookies) {
