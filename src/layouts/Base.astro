@@ -16,7 +16,7 @@ const canonical = Astro.url.href;
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,700;6..96,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,600;8..60,700;8..60,800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <style is:global>
       :root {
         /* Newsprint, not the safe warm off-white: this is the register the
@@ -32,7 +32,7 @@ const canonical = Astro.url.href;
         --marigold: #E39A18;
         --marigold-soft: #FAEFD6;
         --good: #3F6B4A;
-        --serif: 'Bodoni Moda', 'Didot', 'Bodoni MT', Georgia, serif;
+        --serif: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Times New Roman', serif;
         --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
         --shadow: 0 1px 0 rgba(22,19,14,.04);
         --radius: 14px;
@@ -49,8 +49,8 @@ const canonical = Astro.url.href;
         font-feature-settings: 'tnum' 0;
         -webkit-font-smoothing: antialiased;
       }
-      h1 { font-family: var(--serif); font-weight: 700; letter-spacing: -0.005em; margin: 0; }
-      h2, h3 { font-family: var(--sans); font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+      h1 { font-family: var(--serif); font-weight: 800; letter-spacing: -0.015em; margin: 0; }
+      h2, h3 { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; margin: 0; }
       a { color: inherit; }
       .wrap { width: min(100% - 2.5rem, 62rem); margin-inline: auto; }
       .num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }

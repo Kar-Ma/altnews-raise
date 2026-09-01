@@ -19,6 +19,7 @@ export async function fonts() {
     { name: 'Text', data: await load('text-400.woff'), weight: 400, style: 'normal' },
     { name: 'Text', data: await load('text-600.woff'), weight: 600, style: 'normal' },
     { name: 'Text', data: await load('text-700.woff'), weight: 700, style: 'normal' },
+    { name: 'Display', data: await load('display-600.woff'), weight: 600, style: 'normal' },
     { name: 'Display', data: await load('display-700.woff'), weight: 700, style: 'normal' },
     { name: 'Display', data: await load('display-800.woff'), weight: 800, style: 'normal' },
   ];
@@ -91,7 +92,7 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 22, marginBottom: 40 }),
 
-    serifLine(s.campaign.headline, { size: 66, weight: 800, maxWidth: 900, emphasisFrom: words.length - 1, lineHeight: 1.1 }),
+    serifLine(s.campaign.headline, { size: 70, weight: 800, maxWidth: 900, emphasisFrom: words.length - 1, lineHeight: 1.1, tracking: -0.6 }),
 
     h({ flexDirection: 'column', marginTop: 30 }, subLines.map((line, i) => text({
       fontFamily: 'Text', fontSize: 26, lineHeight: 1.42,
@@ -109,8 +110,8 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
         text(EYEBROW, 'Goal'),
       ]),
       h({ justifyContent: 'space-between', alignItems: 'baseline', marginTop: 10 }, [
-        serifLine(formatINR(s.raisedPaise), { size: 68, weight: 800, lineHeight: 1.05 }),
-        serifLine(formatINR(s.goalPaise), { size: 34, color: THEME.muted, lineHeight: 1.05 }),
+        serifLine(formatINR(s.raisedPaise), { size: 72, weight: 800, lineHeight: 1.05, tracking: -0.8 }),
+        serifLine(formatINR(s.goalPaise), { size: 36, weight: 600, color: THEME.muted, lineHeight: 1.05 }),
       ]),
       h({
         marginTop: 24, height: 24, borderRadius: 999, backgroundColor: THEME.track,
@@ -131,7 +132,7 @@ export async function posterTree(s, { width = 1080, height = 1350 } = {}) {
     // The ask
     h({ flexDirection: 'column', marginTop: 38 }, [
       serifLine(s.met ? 'Goal met.' : `${formatShort(s.shortfallPaise)} short`,
-        { size: 54, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
+        { size: 58, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1, tracking: -0.5 }),
       text({ fontFamily: 'Text', fontSize: 30, fontWeight: 600, marginTop: 8 },
         s.met
           ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`

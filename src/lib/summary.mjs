@@ -20,14 +20,14 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
     ]),
     h({ height: 1, backgroundColor: THEME.rule, marginTop: 18, marginBottom: 26 }),
 
-    serifLine(s.campaign.headline, { size: 42, weight: 800, maxWidth: 960, lineHeight: 1.12,
+    serifLine(s.campaign.headline, { size: 44, weight: 800, maxWidth: 960, lineHeight: 1.12, tracking: -0.4,
       emphasisFrom: s.campaign.headline.trim().split(' ').length - 1 }),
     h({ height: 26 }),
 
     h({ alignItems: 'flex-end' }, [
       // serifLine, not text: a box whose content falls back to another font for
       // ₹ measures short in satori, and the next element overlaps it.
-      serifLine(formatINR(s.raisedPaise), { size: 74, weight: 800, lineHeight: 1.05 }),
+      serifLine(formatINR(s.raisedPaise), { size: 78, weight: 800, lineHeight: 1.05, tracking: -0.8 }),
       text({ fontSize: 26, color: THEME.muted, marginLeft: 18, marginBottom: 16 }, `of ${formatINR(s.goalPaise)}`),
     ]),
 
@@ -49,7 +49,7 @@ export async function summarySvg(s, { width = 1200, height = 630 } = {}) {
     h({ marginTop: 'auto', alignItems: 'flex-end', justifyContent: 'space-between' }, [
       h({ flexDirection: 'column', maxWidth: 780 }, [
         serifLine(s.met ? 'Goal met.' : `${formatShort(s.shortfallPaise)} short`,
-          { size: 46, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1 }),
+          { size: 50, weight: 800, color: THEME.accent, emphasisFrom: 0, lineHeight: 1.1, tracking: -0.5 }),
         text({ fontSize: 26, fontWeight: 600, marginTop: 8 },
           s.met
             ? `${formatCount(s.supporters)} readers funded ${s.cycle.monthName}.`

@@ -34,8 +34,8 @@ export async function supporterSvg(s, { name, showAmount, amountPaise, width = 1
 
     h({ flexDirection: 'column', marginTop: 'auto' }, [
       serifLine('I fund independent journalism.', {
-        size: 72, weight: 800, color: THEME.paper, accent: THEME.accentOnDark, emphasisFrom: 2,
-        lineHeight: 1.14, maxWidth: 900,
+        size: 76, weight: 800, color: THEME.paper, accent: THEME.accentOnDark, emphasisFrom: 2,
+        lineHeight: 1.14, maxWidth: 900, tracking: -0.6,
       }),
       text({ fontSize: 30, fontWeight: 600, color: '#C9C0B1', marginTop: 26 },
         who ? `— ${who}` : `— a reader in ${s.cycle.monthName}`),
