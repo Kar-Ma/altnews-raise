@@ -1,0 +1,9 @@
+# Local demo settings and secrets must never ride along with a deployment.
+# On a serverless host these files would also be read-only, so a deployment
+# that carried them would show one operator's local state to everybody.
+data/
+.env
+.env.*
+.vercel
+dist
+.astro
