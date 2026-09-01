@@ -16,7 +16,9 @@ const fileName = `${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}
 <Base title={`${s.org.name} — ${s.cycle.label} poster`} description={s.callToAction}
   noindex={s.preview}>
   {s.preview && (
-    <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
+    <div class="demo-banner">
+      <strong>PREVIEW</strong> — a proposed page for {s.org.name}, with illustrative figures. Not yet official.
+    </div>
   )}
 
   <main class="wrap">

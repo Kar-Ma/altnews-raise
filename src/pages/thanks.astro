@@ -18,7 +18,9 @@ const amount = Astro.url.searchParams.get('amount') ?? '';
   description={`${s.callToAction} Share that you chipped in.`}
   noindex={s.preview}>
   {s.preview && (
-    <div class="demo-banner"><strong>PROTOTYPE</strong> — sample numbers, not real donation data.</div>
+    <div class="demo-banner">
+      <strong>PREVIEW</strong> — a proposed page for {s.org.name}, with illustrative figures. Not yet official.
+    </div>
   )}
 
   <main class="wrap">
