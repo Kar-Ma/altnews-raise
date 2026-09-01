@@ -1,4 +1,4 @@
-import { getAppeal } from '../lib/appeal.mjs';
+import { getRaise } from '../lib/raise.mjs';
 
 export const prerender = false;
 
@@ -6,10 +6,10 @@ export const prerender = false;
 // business in a search index, so demo mode asks crawlers to stay out entirely.
 // Once it is reading real payments, only the control panel stays hidden.
 export async function GET() {
-  const { preview } = await getAppeal();
+  const { preview } = await getRaise();
   const body = preview
     ? `# Preview: the figures here are illustrative, not official.\nUser-agent: *\nDisallow: /\n`
-    : `# The public appeal is meant to be found. The control panel is not.\nUser-agent: *\nDisallow: /settings\nDisallow: /api/admin\nAllow: /\n`;
+    : `# The public page is meant to be found. The control panel is not.\nUser-agent: *\nDisallow: /settings\nDisallow: /api/admin\nAllow: /\n`;
   return new Response(body, {
     headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'public, max-age=300' },
   });

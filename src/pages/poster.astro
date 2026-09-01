@@ -1,11 +1,11 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getAppeal } from '../lib/appeal.mjs';
+import { getRaise } from '../lib/raise.mjs';
 import { formatShort } from '../lib/money.mjs';
 
 export const prerender = false;
 
-const s = await getAppeal();
+const s = await getRaise();
 const pageUrl = new URL('/', Astro.url).href;
 const tweet = s.met
   ? `${s.org.name} met its ${s.cycle.monthName} goal. Reader-funded journalism, funded by readers.`
@@ -31,7 +31,7 @@ const fileName = `${s.org.name.toLowerCase().replace(/\s+/g, '-')}-${s.cycle.id}
 
     <div class="stage">
       <figure>
-        <img src="/poster.png" alt={`${s.org.name} ${s.cycle.label} appeal: ${s.callToAction}`} width="1080" height="1350" />
+        <img src="/poster.png" alt={`${s.org.name} ${s.cycle.label} raise: ${s.callToAction}`} width="1080" height="1350" />
         <figcaption>1080 × 1350 — Instagram, WhatsApp status, X</figcaption>
       </figure>
 

@@ -1,6 +1,6 @@
-# The Alt News appeal page
+# Alt News Raise
 
-A page for Alt News's monthly fundraising appeal. It shows what has come in,
+The page for Alt News's monthly fundraising raise. It shows what has come in,
 what is still needed, and every way to give — and it draws its own poster from
 those numbers, so nobody has to remake a graphic when the total moves.
 
@@ -13,7 +13,7 @@ never need to hear from me again. If it is not, no reply is needed.
 
 ## What it is for
 
-Right now the monthly appeal goes out as an image on X with the running total on
+Right now the monthly raise goes out as an image on X with the running total on
 it. Someone remakes that image by hand, it is only right on the day it is posted,
 and it scrolls away within a day. Meanwhile
 [altnews.in/transparency-of-funding](https://www.altnews.in/transparency-of-funding/)
@@ -38,7 +38,7 @@ Danamojo, and by cheque. No single account knows the real total, so a number rea
 automatically off one of them would be wrong. A number a person works out from all
 three is not.
 
-## Running the appeal
+## Running the raise
 
 Everything is at **/settings**, behind one password.
 
@@ -98,7 +98,7 @@ page".
 
 It is about a thousand lines. The parts worth checking:
 
-- `src/lib/appeal.mjs` — every figure the page quotes, derived in one place.
+- `src/lib/raise.mjs` — every figure the page quotes, derived in one place.
 - `src/lib/cycle.mjs` — the month boundary, in Asia/Kolkata.
 - `src/lib/store.mjs` — the only thing that reads or writes saved settings.
 - `src/pages/index.astro` — the public page.

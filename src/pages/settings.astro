@@ -1,6 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getAppeal, updatedLabel, isStale } from '../lib/appeal.mjs';
+import { getRaise, updatedLabel, isStale } from '../lib/raise.mjs';
 import { readState, storeIsEphemeral } from '../lib/store.mjs';
 import { toRupees, formatINR } from '../lib/money.mjs';
 import { isAuthed, usingDefaultPassword, adminLocked } from '../lib/auth.mjs';
@@ -10,18 +10,18 @@ export const prerender = false;
 const authed = isAuthed(Astro.cookies);
 const note = Astro.url.searchParams.get('note');
 const state = await readState();
-const s = authed ? await getAppeal() : null;
+const s = authed ? await getRaise() : null;
 const locked = adminLocked();
 const ephemeral = storeIsEphemeral();
 const thanksUrl = new URL('/thanks', Astro.url).href;
 ---
-<Base title="Settings — Alt News appeal" description="Private settings page." noindex={true}>
+<Base title="Settings — Alt News Raise" description="Private settings page." noindex={true}>
   <main class="wrap">
     {!authed ? (
       <div class="gate">
-        <h1>{state.org.name} appeal — settings</h1>
+        <h1>{state.org.name} Raise — settings</h1>
         <p class="gate-lede">
-          For whoever runs the appeal. It changes what the page says; it cannot see or move money.
+          For whoever runs the monthly raise. It changes what the page says; it cannot see or move money.
           If you came here to donate, <a href="/">the page is this way</a>.
         </p>
 
@@ -51,7 +51,7 @@ const thanksUrl = new URL('/thanks', Astro.url).href;
         <header class="bar">
           <div>
             <h1>{s.cycle.label}</h1>
-            <p class="bar-sub">{s.org.name} appeal · settings</p>
+            <p class="bar-sub">{s.org.name} Raise · settings</p>
           </div>
           <div class="bar-right">
             <span class={s.preview ? 'pill' : 'pill pill-live'}>{s.preview ? 'Preview' : 'Published'}</span>
@@ -61,9 +61,13 @@ const thanksUrl = new URL('/thanks', Astro.url).href;
 
         {note && <p class="note">{note}</p>}
         {ephemeral && (
-          <p class="note note-bad"><strong>Nothing you save here will stick.</strong> This deployment has
-            no storage attached, so its filesystem resets between visits. Connect a key-value store
-            (Vercel KV or Upstash) and set <code>KV_REST_API_URL</code> and <code>KV_REST_API_TOKEN</code>.</p>
+          <p class="note note-bad">
+            <strong>Nothing you save here will stick yet.</strong> This host wipes its disk between
+            visits, so saving looks like it worked and then forgets. Fix: in the Vercel dashboard open
+            this project, go to <strong>Storage</strong>, add an <strong>Upstash Redis</strong> database
+            and connect it to the project. That is the whole job — it fills in the two settings this
+            page looks for, and this warning disappears on the next visit.
+          </p>
         )}
 
         <div class="cols">

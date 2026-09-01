@@ -1,10 +1,10 @@
-import { getAppeal } from '../lib/appeal.mjs';
+import { getRaise } from '../lib/raise.mjs';
 import { posterPng } from '../lib/poster.mjs';
 
 export const prerender = false;
 
 export async function GET() {
-  const s = await getAppeal();
+  const s = await getRaise();
   const png = await posterPng(s);
   return new Response(png, {
     headers: {

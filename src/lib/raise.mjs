@@ -53,7 +53,7 @@ export function derive(state, nowMs = Date.now()) {
   };
 }
 
-export async function getAppeal(nowMs = Date.now()) {
+export async function getRaise(nowMs = Date.now()) {
   return derive(await readState(), nowMs);
 }
 

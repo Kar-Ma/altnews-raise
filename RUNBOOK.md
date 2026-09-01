@@ -1,4 +1,4 @@
-# Running the appeal page
+# Running Alt News Raise
 
 Written so that whoever picks this up in a year needs nothing from anyone.
 
@@ -28,7 +28,7 @@ the previous month's figures still in it, so:
 Nothing to do. The page notices, the seal changes, and the wording switches from
 "₹4.6 lakh short" to "Funded." Leave it up for the rest of the month.
 
-## Posting the appeal
+## Posting it
 
 `/poster` has the image, sized for Instagram and X, drawn from the current
 figures. Download it and post it, or just post the link to the page — the link

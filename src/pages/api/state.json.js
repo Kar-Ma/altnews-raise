@@ -1,4 +1,4 @@
-import { getAppeal, updatedLabel } from '../../lib/appeal.mjs';
+import { getRaise, updatedLabel } from '../../lib/raise.mjs';
 import { formatINR, formatShort, formatCount } from '../../lib/money.mjs';
 
 export const prerender = false;
@@ -6,7 +6,7 @@ export const prerender = false;
 // The same figures the page shows, as data. Open, because a page about
 // transparency should be checkable by anyone who wants to graph it.
 export async function GET() {
-  const s = await getAppeal();
+  const s = await getRaise();
   return new Response(JSON.stringify({
     org: s.org.name,
     cycle: s.cycle.label,

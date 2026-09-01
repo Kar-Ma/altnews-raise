@@ -1,10 +1,10 @@
-import { getAppeal } from '../lib/appeal.mjs';
+import { getRaise } from '../lib/raise.mjs';
 import { supporterPng, cleanName } from '../lib/supporter.mjs';
 
 export const prerender = false;
 
 export async function GET({ url }) {
-  const s = await getAppeal();
+  const s = await getRaise();
   const amountRupees = Number(url.searchParams.get('amount'));
   const png = await supporterPng(s, {
     name: cleanName(url.searchParams.get('name')),

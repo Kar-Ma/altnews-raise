@@ -1,13 +1,13 @@
 ---
 import Base from '../layouts/Base.astro';
 import Meter from '../components/Meter.astro';
-import { getAppeal, updatedLabel, isStale, giveUrl } from '../lib/appeal.mjs';
+import { getRaise, updatedLabel, isStale, giveUrl } from '../lib/raise.mjs';
 import { formatINR, formatShort, formatCount } from '../lib/money.mjs';
 import { qrSvg } from '../lib/qr.mjs';
 
 export const prerender = false;
 
-const s = await getAppeal();
+const s = await getRaise();
 const qr = await qrSvg(s.donateUrl);
 
 // The last word goes red, on the page and on the poster alike.

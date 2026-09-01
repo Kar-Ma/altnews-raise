@@ -1,12 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
-import { getAppeal } from '../lib/appeal.mjs';
+import { getRaise } from '../lib/raise.mjs';
 import { cleanName } from '../lib/supporter.mjs';
 import { formatShort } from '../lib/money.mjs';
 
 export const prerender = false;
 
-const s = await getAppeal();
+const s = await getRaise();
 // Razorpay Payment Pages can redirect here after a successful payment, so the
 // amount may arrive in the query string. It is never trusted for any total —
 // it only decides what the card says.
