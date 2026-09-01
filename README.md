@@ -206,6 +206,16 @@ Covers the month boundary in IST (including the last minute of a month and the
 December rollover), the derived figures, refunds and pagination in the Razorpay
 reader, and the failure path.
 
+## Questions
+
+If you run a reader-funded organisation in India and want a hand getting this
+going, write to **hello@karthikmahadevan.com**. Bug reports and pull requests
+are welcome in the issues.
+
+To be clear about what I am not asking for: I don't want access to your Razorpay
+account, your dashboard, or your donor data. You deploy this yourself and the
+key stays in your environment.
+
 ## Licence
 
 MIT. Use it, fork it, run it for your own organisation.
